@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Mes Abos — combien te coûtent vraiment tes abonnements ?</title>
+<meta name="description" content="Mes Abos : suis gratuitement tous tes abonnements (Netflix, Spotify, salle de sport...) et découvre en un coup d'œil combien ils te coûtent par mois et par an. 100% local, sans compte, sans pub intrusive.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#081426">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mes Abos">
+<meta name="format-detection" content="telephone=no">
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mes Abos — combien te coûtent vraiment tes abonnements ?">
+<meta property="og:description" content="Suis tous tes abonnements et découvre ton total mensuel et annuel réel. Gratuit, local, sans compte.">
+<meta property="og:image" content="https://itachiuchiha976.github.io/mesabos/icon-512.png">
+<meta property="og:url" content="https://itachiuchiha976.github.io/mesabos/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mes Abos">
+<meta name="twitter:description" content="Combien te coûtent vraiment tes abonnements par mois ? Découvre-le en 10 secondes.">
+
+<style>
+  :root{
+    --bg-top:#081426;
+    --bg-bottom:#0a2a2e;
+    --card:rgba(255,255,255,0.045);
+    --card-border:rgba(255,255,255,0.09);
+    --card-border-hover:rgba(46,213,158,0.35);
+    --text:#eaf6f2;
+    --muted:#94aabf;
+    --accent:#2ed59e;
+    --accent-strong:#20c090;
+    --accent-soft:rgba(46,213,158,0.14);
+    --warn:#ff9f43;
+    --danger:#ff5f6d;
+    --radius-lg:22px;
+    --radius-md:16px;
+    --radius-sm:11px;
+    --maxw:520px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100dvh;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%) fixed;
+    color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x:hidden;
+    touch-action: manipulation;
+    padding-bottom: calc(96px + var(--safe-b));
+  }
+  a{color:var(--accent);}
+  button{font-family:inherit;}
+  ::selection{background:var(--accent); color:#04140f;}
+
+  .wrap{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding: calc(18px + var(--safe-t)) 16px 8px;
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-logo{
+    width:38px; height:38px; border-radius:11px;
+    background: radial-gradient(circle at 30% 30%, #123 0%, #08141f 70%);
+    border:1px solid var(--card-border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px;
+  }
+  .brand-name{font-weight:800; font-size:17px; letter-spacing:0.2px;}
+  .brand-tag{font-size:11px; color:var(--muted); margin-top:1px;}
+
+  .btn-install{
+    font-size:12px; font-weight:600; color:var(--accent);
+    background: var(--accent-soft); border:1px solid var(--card-border-hover);
+    padding:8px 12px; border-radius:100px; cursor:pointer; display:none;
+  }
+  .btn-install.show{display:inline-flex; align-items:center; gap:6px;}
+
+  /* ---------- Totals card ---------- */
+  .totals-card{
+    background: linear-gradient(160deg, rgba(46,213,158,0.16), rgba(46,213,158,0.02) 60%);
+    border:1px solid var(--card-border-hover);
+    border-radius: var(--radius-lg);
+    padding:20px 20px 18px;
+    position:relative;
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .totals-card::after{
+    content:"";
+    position:absolute; right:-40px; top:-40px; width:160px; height:160px;
+    background: radial-gradient(circle, rgba(46,213,158,0.35), transparent 70%);
+    pointer-events:none;
+  }
+  .totals-label{font-size:12.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.6px;}
+  .totals-value{
+    font-size: clamp(34px, 10vw, 44px);
+    font-weight:800;
+    color:var(--accent);
+    line-height:1.05;
+    margin:4px 0 2px;
+    word-break:break-word;
+  }
+  .totals-value small{font-size:0.42em; color:var(--text); font-weight:700; margin-left:4px;}
+  .totals-sub{font-size:13.5px; color:var(--muted); margin-top:2px;}
+  .totals-sub b{color:var(--text); font-weight:700;}
+
+  .totals-actions{display:flex; gap:8px; margin-top:16px;}
+  .btn{
+    border:none; cursor:pointer; border-radius:12px; padding:10px 14px;
+    font-weight:700; font-size:13.5px; display:inline-flex; align-items:center; gap:6px;
+    transition: transform .12s ease, filter .12s ease;
+  }
+  .btn:active{transform:scale(0.96);}
+  .btn-primary{background:var(--accent); color:#04140f;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:rgba(255,255,255,0.07); color:var(--text); border:1px solid var(--card-border);}
+  .btn-ghost:hover{background:rgba(255,255,255,0.11);}
+  .btn-block{width:100%; justify-content:center;}
+  .btn-danger{background:var(--danger); color:#2a0507;}
+  .btn-danger.danger-confirm{background:#c0303e;}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  /* ---------- Section titles ---------- */
+  .section-title{
+    font-size:13px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:0.6px;
+    margin: 18px 2px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title span.count{color:var(--text); background:rgba(255,255,255,0.08); border-radius:100px; padding:2px 9px; font-size:11.5px;}
+
+  /* ---------- Category bar ---------- */
+  .cat-card{
+    background:var(--card); border:1px solid var(--card-border);
+    border-radius:var(--radius-md); padding:14px 14px 12px;
+  }
+  .cat-bar{
+    display:flex; height:12px; border-radius:100px; overflow:hidden;
+    background:rgba(255,255,255,0.06); margin-bottom:10px;
+  }
+  .cat-bar-seg{height:100%; min-width:2px;}
+  .cat-legend{display:flex; flex-wrap:wrap; gap:8px 14px;}
+  .cat-legend-item{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted);}
+  .cat-dot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .cat-legend-item b{color:var(--text); font-weight:700;}
+  .empty-note{font-size:13px; color:var(--muted); text-align:center; padding:10px 4px;}
+
+  /* ---------- Example banner ---------- */
+  .example-banner{
+    background: rgba(255,159,67,0.1); border:1px solid rgba(255,159,67,0.3);
+    border-radius:var(--radius-md); padding:12px 14px; margin-bottom:12px;
+    font-size:13px; color:#ffd3ac; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+  .example-banner button{
+    background:rgba(255,159,67,0.22); border:1px solid rgba(255,159,67,0.4); color:#fff;
+    font-size:12px; font-weight:700; padding:6px 11px; border-radius:9px; cursor:pointer; flex:none;
+  }
+
+  /* ---------- Subscription cards ---------- */
+  .sub-list{display:flex; flex-direction:column; gap:9px;}
+  .sub-card{
+    background:var(--card); border:1px solid var(--card-border);
+    border-radius:var(--radius-md); padding:13px 14px;
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+    border-left:3px solid var(--accent);
+    transition: background .12s ease, border-color .12s ease;
+  }
+  .sub-card:active{background:rgba(255,255,255,0.08);}
+  .sub-avatar{
+    width:42px; height:42px; border-radius:12px; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+  }
+  .sub-mid{flex:1; min-width:0;}
+  .sub-name{font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .sub-pill-example{
+    font-size:9.5px; text-transform:uppercase; letter-spacing:0.4px; font-weight:700;
+    color:var(--muted); background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:100px;
+  }
+  .sub-amount{font-size:12.5px; color:var(--muted); margin-top:2px;}
+  .sub-right{text-align:right; flex:none;}
+  .sub-days{font-size:11.5px; color:var(--muted); font-weight:600;}
+  .sub-badge{
+    font-size:11px; font-weight:800; padding:3px 8px; border-radius:100px;
+    background:rgba(255,159,67,0.18); color:var(--warn); border:1px solid rgba(255,159,67,0.4);
+  }
+  .sub-badge.urgent{background:rgba(255,95,109,0.18); color:var(--danger); border-color:rgba(255,95,109,0.4);}
+
+  .empty-list{
+    text-align:center; padding:34px 14px; color:var(--muted); font-size:13.5px;
+    border:1px dashed var(--card-border); border-radius:var(--radius-md);
+  }
+  .empty-list .emoji{font-size:34px; display:block; margin-bottom:8px;}
+
+  /* ---------- Email capture ---------- */
+  .email-card{
+    margin-top:18px; background:linear-gradient(160deg, rgba(34,193,220,0.12), rgba(34,193,220,0.02));
+    border:1px solid rgba(34,193,220,0.28); border-radius:var(--radius-md); padding:15px 16px;
+  }
+  .email-card h3{margin:0 0 4px; font-size:14.5px;}
+  .email-card p{margin:0 0 11px; font-size:12.5px; color:var(--muted); line-height:1.4;}
+  .email-row{display:flex; gap:8px;}
+  .email-row input{
+    flex:1; min-width:0; background:rgba(255,255,255,0.06); border:1px solid var(--card-border);
+    color:var(--text); border-radius:11px; padding:11px 12px; font-size:13.5px;
+  }
+  .email-row input::placeholder{color:#5c7086;}
+  .email-row input:focus{outline:none; border-color:var(--accent);}
+  .email-msg{font-size:12px; margin-top:8px; color:var(--muted);}
+  .email-msg.ok{color:var(--accent);}
+  .email-msg.err{color:var(--danger);}
+
+  .trust-note{font-size:11.5px; color:#5c7086; text-align:center; margin:20px 0 4px; line-height:1.5;}
+
+  /* ---------- Bottom banner ad placeholder ---------- */
+  .banner-ad{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    background:rgba(6,14,26,0.92); backdrop-filter:blur(6px);
+    border-top:1px dashed rgba(255,255,255,0.14);
+    padding: 9px 14px calc(9px + var(--safe-b));
+    text-align:center; font-size:10.5px; color:#57708a; letter-spacing:0.2px;
+  }
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:fixed; right:18px; bottom:calc(58px + var(--safe-b)); z-index:41;
+    width:58px; height:58px; border-radius:50%; border:none; cursor:pointer;
+    background:linear-gradient(160deg, var(--accent), var(--accent-strong));
+    color:#04140f; font-size:28px; font-weight:400;
+    box-shadow: 0 8px 24px rgba(46,213,158,0.45), 0 2px 8px rgba(0,0,0,0.3);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fab:active{transform:scale(0.93);}
+
+  /* ---------- Overlay / sheet ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:60; display:none;
+    background:rgba(3,8,16,0.66); backdrop-filter: blur(3px);
+  }
+  .overlay.open{display:block;}
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; max-width:var(--maxw); margin:0 auto;
+    background:#0c1c30; border:1px solid var(--card-border); border-bottom:none;
+    border-radius:22px 22px 0 0;
+    padding:10px 20px calc(22px + var(--safe-b));
+    max-height:92dvh; overflow-y:auto;
+    animation: sheetUp .22s ease-out;
+  }
+  @keyframes sheetUp{ from{transform:translateY(28px); opacity:0.4;} to{transform:translateY(0); opacity:1;} }
+  .sheet-handle{width:38px; height:4px; background:rgba(255,255,255,0.2); border-radius:100px; margin:6px auto 14px;}
+  .sheet h2{margin:0 0 16px; font-size:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; color:var(--muted); font-weight:600; margin-bottom:6px;}
+  .field input[type="text"], .field input[type="number"], .field input[type="date"], .field select{
+    width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--card-border);
+    color:var(--text); border-radius:12px; padding:12px 13px; font-size:15px;
+    -webkit-appearance:none; appearance:none;
+  }
+  .field select{
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8'><path d='M0 0 L7 8 L14 0 Z' fill='%2394aabf'/></svg>");
+    background-repeat:no-repeat; background-position: right 14px center;
+  }
+  .field input:focus, .field select:focus{outline:none; border-color:var(--accent);}
+  .row2{display:flex; gap:10px;}
+  .row2 .field{flex:1;}
+
+  .swatches{display:flex; gap:9px; flex-wrap:wrap;}
+  .swatch{
+    width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer;
+    position:relative;
+  }
+  .swatch.active{border-color:#fff;}
+  .swatch.active::after{
+    content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#04140f; font-size:14px; font-weight:900;
+  }
+
+  .sheet-actions{display:flex; gap:10px; margin-top:18px;}
+  .sheet-actions .btn{flex:1;}
+
+  /* ---------- Interstitial ---------- */
+  .interstitial{
+    position:fixed; inset:0; z-index:80; display:none;
+    background:rgba(2,6,12,0.86); backdrop-filter: blur(4px);
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .interstitial.open{display:flex;}
+  .inter-card{
+    max-width:400px; width:100%; background:linear-gradient(160deg,#0e2438,#0a1b2c);
+    border:1px solid var(--card-border-hover); border-radius:var(--radius-lg);
+    padding:26px 22px 22px; text-align:center; position:relative;
+  }
+  .inter-tag{font-size:10.5px; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin-bottom:10px;}
+  .inter-card .emoji-big{font-size:42px; margin-bottom:6px;}
+  .inter-card h3{margin:0 0 8px; font-size:19px; line-height:1.3;}
+  .inter-card p{margin:0 0 18px; font-size:13.5px; color:var(--muted); line-height:1.5;}
+  .inter-cta{
+    display:block; width:100%; background:var(--accent); color:#04140f; text-decoration:none;
+    font-weight:800; font-size:14.5px; padding:13px; border-radius:13px; margin-bottom:10px;
+  }
+  .inter-skip{
+    width:100%; background:transparent; border:1px solid var(--card-border); color:var(--muted);
+    padding:11px; border-radius:13px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+
+  /* ---------- Share preview modal ---------- */
+  .share-modal{
+    position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center;
+    background:rgba(2,6,12,0.86); padding:20px;
+  }
+  .share-modal.open{display:flex;}
+  .share-modal-inner{max-width:320px; width:100%; text-align:center;}
+  .share-modal-inner img{width:100%; border-radius:16px; border:1px solid var(--card-border); margin-bottom:14px;}
+  .share-modal-inner .btn{width:100%; justify-content:center; margin-bottom:8px;}
+
+  @media (max-width:360px){
+    .totals-value{font-size:32px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-logo">💶</div>
+      <div>
+        <div class="brand-name">Mes Abos</div>
+        <div class="brand-tag">Gratuit · Local · Sans compte</div>
+      </div>
+    </div>
+    <button class="btn-install" id="installBtn" data-umami-event="install_click">📲 Installer</button>
+  </header>
+
+  <div class="totals-card">
+    <div class="totals-label">Coût mensuel total</div>
+    <div class="totals-value" id="totalMonthly">0,00 <small>€ / mois</small></div>
+    <div class="totals-sub">Soit environ <b id="totalAnnual">0,00 €</b> par an</div>
+    <div class="totals-actions">
+      <button class="btn btn-primary" id="btnShare" data-umami-event="share_click">📤 Partager mon total</button>
+      <button class="btn btn-ghost" id="btnAddTop" data-umami-event="add_click_top">＋ Ajouter</button>
+    </div>
+  </div>
+
+  <div class="section-title">Répartition par catégorie</div>
+  <div class="cat-card">
+    <div class="cat-bar" id="catBar"></div>
+    <div class="cat-legend" id="catLegend"></div>
+  </div>
+
+  <div id="exampleBannerSlot"></div>
+
+  <div class="section-title">Tes abonnements <span class="count" id="subCount">0</span></div>
+  <div class="sub-list" id="subList"></div>
+
+  <div class="email-card">
+    <h3>💡 3 astuces gratuites</h3>
+    <p>Reçois nos 3 astuces pour couper jusqu'à 40&nbsp;€/mois d'abonnements inutiles, directement par email.</p>
+    <form id="emailForm">
+      <div class="email-row">
+        <input type="email" id="emailInput" placeholder="ton@email.fr" required autocomplete="email" inputmode="email">
+        <button type="submit" class="btn btn-primary" id="emailSubmitBtn" data-umami-event="email_capture_submit">OK</button>
+      </div>
+    </form>
+    <div class="email-msg" id="emailMsg"></div>
+  </div>
+
+  <p class="trust-note">🔒 Toutes tes données restent uniquement dans ton navigateur (localStorage).<br>Aucune donnée d'abonnement n'est envoyée à un serveur.</p>
+
+</div>
+
+<div class="banner-ad">emplacement bannière — AdMob / AdSense à brancher</div>
+<button class="fab" id="fabAdd" aria-label="Ajouter un abonnement" data-umami-event="add_click_fab">＋</button>
+
+<!-- Sheet ajout/édition -->
+<div class="overlay" id="sheetOverlay">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <h2 id="sheetTitle">Ajouter un abonnement</h2>
+    <form id="subForm">
+      <div class="field">
+        <label for="f-name">Nom</label>
+        <input type="text" id="f-name" placeholder="Ex : Netflix" required maxlength="40">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-amount">Montant (€)</label>
+          <input type="number" id="f-amount" placeholder="9,99" step="0.01" min="0" required inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="f-cycle">Cycle</label>
+          <select id="f-cycle">
+            <option value="mensuel">Mensuel</option>
+            <option value="annuel">Annuel</option>
+            <option value="hebdomadaire">Hebdomadaire</option>
+            <option value="trimestriel">Trimestriel</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-category">Catégorie</label>
+          <select id="f-category">
+            <option value="Streaming">🎬 Streaming</option>
+            <option value="Musique">🎵 Musique</option>
+            <option value="Sport">💪 Sport</option>
+            <option value="Logiciel">💻 Logiciel</option>
+            <option value="Presse">📰 Presse</option>
+            <option value="Autre">📦 Autre</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-date">Prochain prélèvement</label>
+          <input type="date" id="f-date" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Couleur d'accent</label>
+        <div class="swatches" id="swatches"></div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-danger" id="btnDelete" style="display:none;">Supprimer</button>
+        <button type="submit" class="btn btn-primary" id="btnSave">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Interstitiel house-ad -->
+<div class="interstitial" id="interstitial">
+  <div class="inter-card">
+    <div class="inter-tag">Publicité</div>
+    <div class="emoji-big">😱</div>
+    <h3>Tu paies <span id="interAmount">—</span>&nbsp;€/mois en abonnements ?</h3>
+    <p>Reprends le contrôle de ton argent avec notre outil <b>Contrôle Argent</b> : identifie en 10 minutes où part ton argent chaque mois.</p>
+    <a class="inter-cta" href="https://tonargentexplique.fr/controle-argent/" target="_blank" rel="noopener noreferrer" data-umami-event="interstitial_cta_click">Reprendre le contrôle →</a>
+    <button class="inter-skip" id="interSkip" disabled>Continuer (5)</button>
+  </div>
+</div>
+
+<!-- Modal partage (fallback) -->
+<div class="share-modal" id="shareModal">
+  <div class="share-modal-inner">
+    <img id="shareImgPreview" alt="Aperçu de la carte à partager">
+    <button class="btn btn-primary" id="shareDownloadBtn">⬇️ Télécharger l'image</button>
+    <button class="btn btn-ghost" id="shareCloseBtn">Fermer</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ========================================================
+     CONSTANTES & CONFIG
+  ======================================================== */
+  var LS_SUBS = "mesabos_subs_v1";
+  var LS_SEEDED = "mesabos_seeded_v1";
+  var LS_ADDS = "mesabos_user_adds_v1";
+
+  var CATS = {
+    Streaming: { emoji: "🎬", color: "#ff5f6d" },
+    Musique:   { emoji: "🎵", color: "#8e6bff" },
+    Sport:     { emoji: "💪", color: "#ff9f43" },
+    Logiciel:  { emoji: "💻", color: "#22c1dc" },
+    Presse:    { emoji: "📰", color: "#f7d154" },
+    Autre:     { emoji: "📦", color: "#7f8fa6" }
+  };
+  var SWATCH_COLORS = ["#2ed59e", "#ff5f6d", "#8e6bff", "#ff9f43", "#22c1dc", "#f7d154", "#7f8fa6", "#4d7cff"];
+
+  var CYCLE_LABEL = { mensuel: "mois", annuel: "an", hebdomadaire: "semaine", trimestriel: "trimestre" };
+
+  /* ========================================================
+     UTILS
+  ======================================================== */
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+  function formatEUR(n, decimals){
+    if (decimals === undefined) decimals = 2;
+    return n.toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  }
+
+  function isoPlusDays(n){
+    var d = new Date();
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function monthlyEquivalent(amount, cycle){
+    switch(cycle){
+      case "mensuel": return amount;
+      case "annuel": return amount / 12;
+      case "hebdomadaire": return amount * 52 / 12;
+      case "trimestriel": return amount / 3;
+      default: return amount;
+    }
+  }
+
+  function addCycle(d, cycle){
+    var nd = new Date(d.getTime());
+    switch(cycle){
+      case "mensuel": nd.setMonth(nd.getMonth() + 1); break;
+      case "annuel": nd.setFullYear(nd.getFullYear() + 1); break;
+      case "hebdomadaire": nd.setDate(nd.getDate() + 7); break;
+      case "trimestriel": nd.setMonth(nd.getMonth() + 3); break;
+      default: nd.setMonth(nd.getMonth() + 1);
+    }
+    return nd;
+  }
+
+  function todayMidnight(){
+    var t = new Date();
+    t.setHours(0,0,0,0);
+    return t;
+  }
+
+  // Fait avancer une date de prélèvement passée jusqu'à la prochaine occurrence future (non destructif, calcul à la volée)
+  function effectiveDate(dateStr, cycle){
+    var d = new Date(dateStr + "T00:00:00");
+    if (isNaN(d.getTime())) return null;
+    var today = todayMidnight();
+    var guard = 0;
+    while (d < today && guard < 500){
+      d = addCycle(d, cycle);
+      guard++;
+    }
+    return d;
+  }
+
+  function daysUntil(d){
+    var today = todayMidnight();
+    return Math.round((d.getTime() - today.getTime()) / 86400000);
+  }
+
+  /* ========================================================
+     STOCKAGE
+  ======================================================== */
+  function loadSubs(){
+    try{
+      var raw = localStorage.getItem(LS_SUBS);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){ return []; }
+  }
+
+  function saveSubs(subs){
+    try{ localStorage.setItem(LS_SUBS, JSON.stringify(subs)); }catch(e){}
+  }
+
+  function seedDemoIfNeeded(){
+    if (localStorage.getItem(LS_SEEDED)) return;
+    var demo = [
+      { id: uid(), name: "Netflix",        amount: 13.49, cycle: "mensuel", category: "Streaming", nextDate: isoPlusDays(6),  color: CATS.Streaming.color, example: true },
+      { id: uid(), name: "Spotify",        amount: 11.99, cycle: "mensuel", category: "Musique",   nextDate: isoPlusDays(24), color: CATS.Musique.color,   example: true },
+      { id: uid(), name: "Salle de sport", amount: 29.90, cycle: "mensuel", category: "Sport",     nextDate: isoPlusDays(2),  color: CATS.Sport.color,     example: true },
+      { id: uid(), name: "iCloud+",        amount: 2.99,  cycle: "mensuel", category: "Logiciel",  nextDate: isoPlusDays(13), color: CATS.Logiciel.color,  example: true }
+    ];
+    saveSubs(demo);
+    localStorage.setItem(LS_SEEDED, "1");
+  }
+
+  /* ========================================================
+     RENDU — TOTAUX
+  ======================================================== */
+  function computeMonthlyTotal(subs){
+    return subs.reduce(function(sum, s){ return sum + monthlyEquivalent(parseFloat(s.amount) || 0, s.cycle); }, 0);
+  }
+
+  function renderTotals(subs){
+    var monthly = computeMonthlyTotal(subs);
+    var annual = monthly * 12;
+    document.getElementById("totalMonthly").innerHTML = formatEUR(monthly) + " <small>€ / mois</small>";
+    document.getElementById("totalAnnual").textContent = formatEUR(annual) + " €";
+  }
+
+  /* ========================================================
+     RENDU — RÉPARTITION CATÉGORIE
+  ======================================================== */
+  function renderCategoryBar(subs){
+    var bar = document.getElementById("catBar");
+    var legend = document.getElementById("catLegend");
+    bar.innerHTML = "";
+    legend.innerHTML = "";
+
+    if (!subs.length){
+      bar.style.display = "none";
+      legend.innerHTML = '<div class="empty-note" style="width:100%;">Ajoute un abonnement pour voir la répartition de tes dépenses.</div>';
+      return;
+    }
+    bar.style.display = "flex";
+
+    var totals = {};
+    var grandTotal = 0;
+    subs.forEach(function(s){
+      var m = monthlyEquivalent(parseFloat(s.amount) || 0, s.cycle);
+      totals[s.category] = (totals[s.category] || 0) + m;
+      grandTotal += m;
+    });
+
+    var cats = Object.keys(totals).sort(function(a,b){ return totals[b] - totals[a]; });
+
+    cats.forEach(function(cat){
+      var val = totals[cat];
+      var pct = grandTotal > 0 ? (val / grandTotal * 100) : 0;
+      var color = (CATS[cat] && CATS[cat].color) || "#7f8fa6";
+
+      var seg = document.createElement("div");
+      seg.className = "cat-bar-seg";
+      seg.style.flexGrow = String(Math.max(pct, 0.5));
+      seg.style.background = color;
+      bar.appendChild(seg);
+
+      var item = document.createElement("div");
+      item.className = "cat-legend-item";
+      item.innerHTML = '<span class="cat-dot" style="background:' + color + '"></span>' +
+        (CATS[cat] ? CATS[cat].emoji : "📦") + " " + cat + " · <b>" + formatEUR(val) + " €</b> (" + Math.round(pct) + "%)";
+      legend.appendChild(item);
+    });
+  }
+
+  /* ========================================================
+     RENDU — BANNIÈRE EXEMPLES
+  ======================================================== */
+  function renderExampleBanner(subs){
+    var slot = document.getElementById("exampleBannerSlot");
+    var hasExample = subs.some(function(s){ return s.example; });
+    if (!hasExample){ slot.innerHTML = ""; return; }
+    slot.innerHTML =
+      '<div class="example-banner">' +
+        '<span>👋 Ce sont des exemples pour tester l\'app. Garde-les ou remplace-les par tes vrais abonnements.</span>' +
+        '<button id="clearExamplesBtn">Tout effacer</button>' +
+      '</div>';
+    document.getElementById("clearExamplesBtn").addEventListener("click", function(){
+      var remaining = loadSubs().filter(function(s){ return !s.example; });
+      saveSubs(remaining);
+      renderAll();
+    });
+  }
+
+  /* ========================================================
+     RENDU — LISTE
+  ======================================================== */
+  function renderList(subs){
+    var list = document.getElementById("subList");
+    var countEl = document.getElementById("subCount");
+    list.innerHTML = "";
+    countEl.textContent = String(subs.length);
+
+    if (!subs.length){
+      list.innerHTML = '<div class="empty-list"><span class="emoji">🗂️</span>Aucun abonnement pour l\'instant.<br>Appuie sur « ＋ » pour ajouter le premier.</div>';
+      return;
+    }
+
+    var withDates = subs.map(function(s){
+      var eff = effectiveDate(s.nextDate, s.cycle) || todayMidnight();
+      return { sub: s, eff: eff, days: daysUntil(eff) };
+    });
+    withDates.sort(function(a,b){ return a.eff - b.eff; });
+
+    withDates.forEach(function(entry){
+      var s = entry.sub;
+      var catMeta = CATS[s.category] || CATS.Autre;
+      var color = s.color || catMeta.color;
+      var days = entry.days;
+
+      var dayLabel;
+      if (days < 0) dayLabel = "En retard";
+      else if (days === 0) dayLabel = "Aujourd'hui";
+      else if (days === 1) dayLabel = "Demain";
+      else dayLabel = "Dans " + days + " j";
+
+      var badgeHTML = "";
+      if (days <= 3){
+        var urgentClass = (days <= 1) ? " urgent" : "";
+        badgeHTML = '<span class="sub-badge' + urgentClass + '">' + dayLabel + '</span>';
+      } else {
+        badgeHTML = '<span class="sub-days">' + dayLabel + '</span>';
+      }
+
+      var card = document.createElement("div");
+      card.className = "sub-card";
+      card.style.borderLeftColor = color;
+      card.setAttribute("data-id", s.id);
+      card.innerHTML =
+        '<div class="sub-avatar" style="background:' + color + '22; color:' + color + '">' + catMeta.emoji + '</div>' +
+        '<div class="sub-mid">' +
+          '<div class="sub-name">' + escapeHTML(s.name) + (s.example ? '<span class="sub-pill-example">exemple</span>' : '') + '</div>' +
+          '<div class="sub-amount">' + formatEUR(parseFloat(s.amount) || 0) + ' € / ' + (CYCLE_LABEL[s.cycle] || s.cycle) + '</div>' +
+        '</div>' +
+        '<div class="sub-right">' + badgeHTML + '</div>';
+      card.addEventListener("click", function(){ openEditSheet(s.id); });
+      list.appendChild(card);
+    });
+  }
+
+  function escapeHTML(str){
+    var div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  /* ========================================================
+     RENDU GLOBAL
+  ======================================================== */
+  function renderAll(){
+    var subs = loadSubs();
+    renderTotals(subs);
+    renderCategoryBar(subs);
+    renderExampleBanner(subs);
+    renderList(subs);
+  }
+
+  /* ========================================================
+     FORMULAIRE AJOUT / ÉDITION
+  ======================================================== */
+  var sheetOverlay = document.getElementById("sheetOverlay");
+  var subForm = document.getElementById("subForm");
+  var sheetTitle = document.getElementById("sheetTitle");
+  var btnDelete = document.getElementById("btnDelete");
+  var swatchesEl = document.getElementById("swatches");
+  var currentEditId = null;
+  var selectedColor = SWATCH_COLORS[0];
+  var colorTouched = false;
+
+  function buildSwatches(){
+    swatchesEl.innerHTML = "";
+    SWATCH_COLORS.forEach(function(c){
+      var sw = document.createElement("div");
+      sw.className = "swatch" + (c === selectedColor ? " active" : "");
+      sw.style.background = c;
+      sw.setAttribute("data-color", c);
+      sw.addEventListener("click", function(){
+        selectedColor = c;
+        colorTouched = true;
+        buildSwatches();
+      });
+      swatchesEl.appendChild(sw);
+    });
+  }
+
+  function openAddSheet(){
+    currentEditId = null;
+    colorTouched = false;
+    sheetTitle.textContent = "Ajouter un abonnement";
+    document.getElementById("f-name").value = "";
+    document.getElementById("f-amount").value = "";
+    document.getElementById("f-cycle").value = "mensuel";
+    document.getElementById("f-category").value = "Streaming";
+    document.getElementById("f-date").value = isoPlusDays(30);
+    selectedColor = CATS.Streaming.color;
+    buildSwatches();
+    btnDelete.style.display = "none";
+    resetDeleteBtn();
+    sheetOverlay.classList.add("open");
+  }
+
+  function openEditSheet(id){
+    var subs = loadSubs();
+    var s = subs.find(function(x){ return x.id === id; });
+    if (!s) return;
+    currentEditId = id;
+    colorTouched = true;
+    sheetTitle.textContent = "Modifier l'abonnement";
+    document.getElementById("f-name").value = s.name;
+    document.getElementById("f-amount").value = s.amount;
+    document.getElementById("f-cycle").value = s.cycle;
+    document.getElementById("f-category").value = s.category;
+    document.getElementById("f-date").value = s.nextDate;
+    selectedColor = s.color || (CATS[s.category] || CATS.Autre).color;
+    buildSwatches();
+    btnDelete.style.display = "inline-flex";
+    resetDeleteBtn();
+    sheetOverlay.classList.add("open");
+  }
+
+  function closeSheet(){
+    sheetOverlay.classList.remove("open");
+  }
+
+  function resetDeleteBtn(){
+    btnDelete.textContent = "Supprimer";
+    btnDelete.classList.remove("danger-confirm");
+    delete btnDelete.dataset.confirm;
+  }
+
+  document.getElementById("f-category").addEventListener("change", function(){
+    if (!colorTouched){
+      var cat = this.value;
+      selectedColor = (CATS[cat] || CATS.Autre).color;
+      buildSwatches();
+    }
+  });
+
+  sheetOverlay.addEventListener("click", function(e){
+    if (e.target === sheetOverlay) closeSheet();
+  });
+
+  subForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var name = document.getElementById("f-name").value.trim();
+    var amount = parseFloat(document.getElementById("f-amount").value);
+    var cycle = document.getElementById("f-cycle").value;
+    var category = document.getElementById("f-category").value;
+    var nextDate = document.getElementById("f-date").value;
+
+    if (!name || isNaN(amount) || amount <= 0 || !nextDate) return;
+
+    var subs = loadSubs();
+
+    if (currentEditId){
+      var idx = subs.findIndex(function(x){ return x.id === currentEditId; });
+      if (idx > -1){
+        subs[idx] = {
+          id: currentEditId, name: name, amount: amount, cycle: cycle,
+          category: category, nextDate: nextDate, color: selectedColor,
+          example: false // dès qu'on édite un exemple, il devient un abonnement "réel"
+        };
+      }
+      saveSubs(subs);
+      closeSheet();
+      renderAll();
+    } else {
+      subs.push({
+        id: uid(), name: name, amount: amount, cycle: cycle,
+        category: category, nextDate: nextDate, color: selectedColor, example: false
+      });
+      saveSubs(subs);
+      closeSheet();
+      renderAll();
+
+      // Compteur d'ajouts utilisateur -> interstitiel au 3e ajout réel
+      var count = parseInt(localStorage.getItem(LS_ADDS) || "0", 10) + 1;
+      localStorage.setItem(LS_ADDS, String(count));
+      if (count === 3){
+        setTimeout(showInterstitial, 420);
+      }
+    }
+  });
+
+  btnDelete.addEventListener("click", function(){
+    if (!currentEditId) return;
+    if (btnDelete.dataset.confirm !== "1"){
+      btnDelete.dataset.confirm = "1";
+      btnDelete.textContent = "Confirmer la suppression ?";
+      btnDelete.classList.add("danger-confirm");
+      setTimeout(function(){
+        if (btnDelete.dataset.confirm === "1") resetDeleteBtn();
+      }, 3000);
+      return;
+    }
+    var subs = loadSubs().filter(function(x){ return x.id !== currentEditId; });
+    saveSubs(subs);
+    closeSheet();
+    renderAll();
+  });
+
+  document.getElementById("fabAdd").addEventListener("click", openAddSheet);
+  document.getElementById("btnAddTop").addEventListener("click", openAddSheet);
+
+  /* ========================================================
+     INTERSTITIEL HOUSE-AD
+  ======================================================== */
+  var interstitialEl = document.getElementById("interstitial");
+  var interSkip = document.getElementById("interSkip");
+  var interTimer = null;
+
+  function showInterstitial(){
+    var subs = loadSubs();
+    var monthly = computeMonthlyTotal(subs);
+    document.getElementById("interAmount").textContent = formatEUR(monthly);
+    interstitialEl.classList.add("open");
+
+    var remaining = 5;
+    interSkip.disabled = true;
+    interSkip.textContent = "Continuer (" + remaining + ")";
+    clearInterval(interTimer);
+    interTimer = setInterval(function(){
+      remaining--;
+      if (remaining <= 0){
+        clearInterval(interTimer);
+        interSkip.disabled = false;
+        interSkip.textContent = "Continuer";
+      } else {
+        interSkip.textContent = "Continuer (" + remaining + ")";
+      }
+    }, 1000);
+  }
+
+  interSkip.addEventListener("click", function(){
+    if (interSkip.disabled) return;
+    clearInterval(interTimer);
+    interstitialEl.classList.remove("open");
+  });
+
+  /* ========================================================
+     PARTAGE — SHARE CARD CANVAS 1080x1920
+  ======================================================== */
+  function makeShareCanvas(monthlyStr, annualStr){
+    var canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1920;
+    var ctx = canvas.getContext("2d");
+
+    var grad = ctx.createLinearGradient(0, 0, 0, 1920);
+    grad.addColorStop(0, "#081426");
+    grad.addColorStop(1, "#0a2a2e");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    var glow = ctx.createRadialGradient(540, 460, 40, 540, 460, 520);
+    glow.addColorStop(0, "rgba(46,213,158,0.35)");
+    glow.addColorStop(1, "rgba(46,213,158,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    ctx.strokeStyle = "#2ed59e";
+    ctx.lineWidth = 24;
+    ctx.beginPath();
+    ctx.arc(540, 400, 145, 55 * Math.PI / 180, 340 * Math.PI / 180);
+    ctx.stroke();
+
+    ctx.fillStyle = "#eaf6f2";
+    ctx.font = "bold 120px 'Segoe UI', system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("€", 540, 400);
+
+    ctx.fillStyle = "#2ed59e";
+    ctx.font = "bold 38px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("M E S   A B O S", 540, 630);
+
+    ctx.fillStyle = "#eaf6f2";
+    ctx.font = "56px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("Je dépense", 540, 730);
+
+    ctx.fillStyle = "#2ed59e";
+    ctx.font = "bold 118px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText(monthlyStr + " €", 540, 865, 940);
+
+    ctx.fillStyle = "#eaf6f2";
+    ctx.font = "bold 48px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("par mois en abonnements 😱", 540, 950, 940);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(240, 1050);
+    ctx.lineTo(840, 1050);
+    ctx.stroke();
+
+    ctx.fillStyle = "#94aabf";
+    ctx.font = "42px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("Soit environ", 540, 1130);
+
+    ctx.fillStyle = "#eaf6f2";
+    ctx.font = "bold 84px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText(annualStr + " € / an", 540, 1230, 940);
+
+    ctx.fillStyle = "#2ed59e";
+    ctx.font = "italic 46px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("Et toi, combien ça te coûte ?", 540, 1400, 940);
+
+    ctx.fillStyle = "rgba(255,255,255,0.07)";
+    ctx.fillRect(0, 1740, 1080, 180);
+    ctx.fillStyle = "#eaf6f2";
+    ctx.font = "bold 40px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("Mes Abos — app gratuite", 540, 1805);
+    ctx.fillStyle = "#94aabf";
+    ctx.font = "30px 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText("Suis tes abos, reprends le contrôle", 540, 1858);
+
+    return canvas;
+  }
+
+  function downloadBlob(blob){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "mes-abos.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function shareCard(){
+    var subs = loadSubs();
+    var monthly = computeMonthlyTotal(subs);
+    var annual = monthly * 12;
+    var monthlyStr = formatEUR(monthly);
+    var annualStr = formatEUR(annual, 0);
+    var canvas = makeShareCanvas(monthlyStr, annualStr);
+
+    canvas.toBlob(function(blob){
+      if (!blob) return;
+      var shareText = "Je dépense " + monthlyStr + " €/mois en abonnements 😱 Et toi ? (via Mes Abos, app gratuite)";
+      var file;
+      try{ file = new File([blob], "mes-abos.png", { type: "image/png" }); }catch(e){ file = null; }
+
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })){
+        navigator.share({ files: [file], title: "Mes Abos", text: shareText }).catch(function(){
+          openShareModalFallback(blob);
+        });
+      } else {
+        openShareModalFallback(blob);
+      }
+    }, "image/png", 0.95);
+  }
+
+  var shareModal = document.getElementById("shareModal");
+  var currentShareBlob = null;
+
+  function openShareModalFallback(blob){
+    currentShareBlob = blob;
+    var url = URL.createObjectURL(blob);
+    document.getElementById("shareImgPreview").src = url;
+    shareModal.classList.add("open");
+  }
+
+  document.getElementById("shareDownloadBtn").addEventListener("click", function(){
+    if (currentShareBlob) downloadBlob(currentShareBlob);
+  });
+  document.getElementById("shareCloseBtn").addEventListener("click", function(){
+    shareModal.classList.remove("open");
+  });
+  shareModal.addEventListener("click", function(e){
+    if (e.target === shareModal) shareModal.classList.remove("open");
+  });
+
+  document.getElementById("btnShare").addEventListener("click", shareCard);
+
+  /* ========================================================
+     CAPTURE EMAIL — WEB3FORMS
+  ======================================================== */
+  var emailForm = document.getElementById("emailForm");
+  var emailMsg = document.getElementById("emailMsg");
+  var emailSubmitBtn = document.getElementById("emailSubmitBtn");
+
+  emailForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var input = document.getElementById("emailInput");
+    var email = input.value.trim();
+    var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(email)){
+      emailMsg.textContent = "Adresse email invalide.";
+      emailMsg.className = "email-msg err";
+      return;
+    }
+
+    emailSubmitBtn.disabled = true;
+    emailSubmitBtn.textContent = "…";
+    emailMsg.textContent = "";
+    emailMsg.className = "email-msg";
+
+    fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        access_key: "d97a8c73-b827-48bb-b437-e053a73fdb7e",
+        subject: "Nouvel inscrit — Mes Abos (3 astuces)",
+        from_name: "Mes Abos (app)",
+        email: email,
+        message: "Nouvel inscrit depuis l'app Mes Abos, souhaite recevoir les 3 astuces pour couper des abonnements inutiles.\nEmail: " + email
+      })
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (data && data.success){
+        emailMsg.textContent = "Merci ! Regarde ta boîte mail (et les spams) 📬";
+        emailMsg.className = "email-msg ok";
+        input.value = "";
+      } else {
+        emailMsg.textContent = "Oups, réessaie un peu plus tard.";
+        emailMsg.className = "email-msg err";
+      }
+    }).catch(function(){
+      emailMsg.textContent = "Pas de réseau — réessaie plus tard.";
+      emailMsg.className = "email-msg err";
+    }).finally(function(){
+      emailSubmitBtn.disabled = false;
+      emailSubmitBtn.textContent = "OK";
+    });
+  });
+
+  /* ========================================================
+     PWA — SERVICE WORKER + INSTALL PROMPT
+  ======================================================== */
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+
+  var deferredInstallPrompt = null;
+  var installBtn = document.getElementById("installBtn");
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.classList.add("show");
+  });
+  installBtn.addEventListener("click", function(){
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.finally(function(){
+      deferredInstallPrompt = null;
+      installBtn.classList.remove("show");
+    });
+  });
+  window.addEventListener("appinstalled", function(){
+    installBtn.classList.remove("show");
+  });
+
+  /* ========================================================
+     INIT
+  ======================================================== */
+  seedDemoIfNeeded();
+  renderAll();
+
+})();
+</script>
+
+<script defer src="https://cloud.umami.is/script.js" data-website-id="d0fa94fe-a108-4590-a465-8f0017569370"></script>
+</body>
+</html>
