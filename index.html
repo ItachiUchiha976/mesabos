@@ -363,6 +363,7 @@
     <div class="totals-actions">
       <button class="btn btn-primary" id="btnShare" data-umami-event="share_click">📤 Partager mon total</button>
       <button class="btn btn-ghost" id="btnAddTop" data-umami-event="add_click_top">＋ Ajouter</button>
+      <button class="btn btn-ghost" id="proBtn" data-umami-event="pro_click">✨ Sans pub</button>
     </div>
   </div>
 
@@ -459,6 +460,17 @@
     <p>Reprends le contrôle de ton argent avec notre outil <b>Contrôle Argent</b> : identifie en 10 minutes où part ton argent chaque mois.</p>
     <a class="inter-cta" href="https://tonargentexplique.fr/controle-argent/" target="_blank" rel="noopener noreferrer" data-umami-event="interstitial_cta_click">Reprendre le contrôle →</a>
     <button class="inter-skip" id="interSkip" disabled>Continuer (5)</button>
+  </div>
+</div>
+
+<!-- Premium / sans pub -->
+<div class="interstitial" id="proOverlay">
+  <div class="inter-card">
+    <div class="emoji-big">✨</div>
+    <h3>Mes Abos sans pub</h3>
+    <p>Supprime <b>définitivement</b> la publicité et débloque les rappels de renouvellement. Un seul paiement, à vie.</p>
+    <a class="inter-cta" id="proBuy" href="javascript:void(0)">Passer sans pub</a>
+    <button class="inter-skip" id="proClose">Plus tard</button>
   </div>
 </div>
 
@@ -890,6 +902,7 @@
   var interTimer = null;
 
   function showInterstitial(){
+    if (localStorage.getItem("mesabos_premium")) return;   // Pro = sans pub
     var subs = loadSubs();
     var monthly = computeMonthlyTotal(subs);
     document.getElementById("interAmount").textContent = formatEUR(monthly);
@@ -916,6 +929,18 @@
     clearInterval(interTimer);
     interstitialEl.classList.remove("open");
   });
+
+  /* ---- PRO / sans pub ---- */
+  (function(){
+    var isPro = !!localStorage.getItem("mesabos_premium");
+    var bannerEl = document.querySelector(".banner-ad");
+    var proBtn = document.getElementById("proBtn");
+    var ov = document.getElementById("proOverlay");
+    if (isPro){ if(bannerEl) bannerEl.style.display="none"; if(proBtn) proBtn.style.display="none"; }
+    if (proBtn) proBtn.addEventListener("click", function(){ if(ov) ov.classList.add("open"); });
+    var pc = document.getElementById("proClose"); if(pc) pc.addEventListener("click", function(){ if(ov) ov.classList.remove("open"); });
+    var pb = document.getElementById("proBuy"); if(pb) pb.addEventListener("click", function(){ if(ov) ov.classList.remove("open"); /* Google Play Billing à brancher à la publication */ });
+  })();
 
   /* ========================================================
      PARTAGE — SHARE CARD CANVAS 1080x1920
