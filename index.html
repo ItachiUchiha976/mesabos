@@ -237,6 +237,7 @@
 
   /* ---------- Bottom banner ad placeholder ---------- */
   .banner-ad{
+    display:none;   /* placeholder retiré : la vraie bannière = AdMob natif (overlay bas) */
     position:fixed; left:0; right:0; bottom:0; z-index:40;
     background:rgba(6,14,26,0.92); backdrop-filter:blur(6px);
     border-top:1px dashed rgba(255,255,255,0.14);
@@ -390,7 +391,7 @@
     <div class="email-msg" id="emailMsg"></div>
   </div>
 
-  <p class="trust-note">🔒 Toutes tes données restent uniquement dans ton navigateur (localStorage).<br>Aucune donnée d'abonnement n'est envoyée à un serveur.</p>
+  <p class="trust-note">🔔 Sur l'app installée, on te prévient <b>2 jours avant</b> chaque prélèvement — pour ne plus jamais être surpris.<br>🔒 Toutes tes données restent uniquement sur ton appareil. Aucune donnée d'abonnement n'est envoyée à un serveur.</p>
 
 </div>
 
@@ -468,7 +469,7 @@
   <div class="inter-card">
     <div class="emoji-big">✨</div>
     <h3>Mes Abos sans pub</h3>
-    <p>Supprime <b>définitivement</b> la publicité et débloque les rappels de renouvellement. Un seul paiement, à vie.</p>
+    <p>Supprime <b>définitivement</b> la publicité et soutiens l'app. Les <b>rappels de renouvellement sont inclus gratuitement</b> pour tout le monde. Un seul paiement, à vie.</p>
     <a class="inter-cta" id="proBuy" href="javascript:void(0)">Passer sans pub</a>
     <button class="inter-skip" id="proClose">Plus tard</button>
   </div>
@@ -582,6 +583,7 @@
 
   function saveSubs(subs){
     try{ localStorage.setItem(LS_SUBS, JSON.stringify(subs)); }catch(e){}
+    try{ rescheduleReminders(); }catch(e){}   // reprogramme les rappels à chaque modif
   }
 
   function seedDemoIfNeeded(){
@@ -902,7 +904,12 @@
   var interTimer = null;
 
   function showInterstitial(){
-    if (localStorage.getItem("mesabos_premium")) return;   // Pro = sans pub
+    if (isProNow()) return;   // Pro = sans pub
+    // Natif : vraie pub AdMob si prête, sinon repli house-ad (cross-promo)
+    if (AdMob && admobInterReady){ AdMob.showInterstitial().catch(function(){ showHouseInterstitial(); }); return; }
+    showHouseInterstitial();
+  }
+  function showHouseInterstitial(){
     var subs = loadSubs();
     var monthly = computeMonthlyTotal(subs);
     document.getElementById("interAmount").textContent = formatEUR(monthly);
@@ -1159,10 +1166,71 @@
   });
 
   /* ========================================================
+     NATIF — AdMob (bannière + interstitiel) & RAPPELS DE RENOUVELLEMENT
+     Rappels = GRATUITS (cœur de l'app). Notifications locales natives,
+     2 jours avant chaque prélèvement, à 10h. Reprogrammés à chaque modif.
+  ======================================================== */
+  var Cap = window.Capacitor;
+  var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+  var AdMob = (isNative && Cap.Plugins) ? Cap.Plugins.AdMob : null;
+  var LocalNotifications = (isNative && Cap.Plugins) ? Cap.Plugins.LocalNotifications : null;
+  var admobInterReady = false;
+
+  function isProNow(){ return !!localStorage.getItem("mesabos_premium"); }
+
+  function admobInit(){
+    if (!AdMob || isProNow()) return;
+    AdMob.initialize({ initializeForTesting: true }).then(function(){
+      try{ AdMob.addListener('interstitialAdDismissed', function(){ admobInterReady=false; prepAdmobInter(); }); }catch(e){}
+      try{ AdMob.addListener('interstitialAdFailedToShow', function(){ admobInterReady=false; prepAdmobInter(); }); }catch(e){}
+      prepAdmobInter();
+      showAdmobBanner();
+    }).catch(function(){});
+  }
+  function prepAdmobInter(){ if(!AdMob) return; AdMob.prepareInterstitial({ adId:'ca-app-pub-3940256099942544/1033173712', isTesting:true }).then(function(){ admobInterReady=true; }).catch(function(){ admobInterReady=false; }); }
+  function showAdmobBanner(){ if(!AdMob || isProNow()) return; AdMob.showBanner({ adId:'ca-app-pub-3940256099942544/6300978111', adSize:'ADAPTIVE_BANNER', position:'BOTTOM_CENTER', margin:0, isTesting:true }).catch(function(){}); }
+  function removeAdmob(){ if(!AdMob) return; try{ AdMob.removeBanner(); }catch(e){} }
+
+  // Reprogramme les rappels : annule les anciens puis planifie 2 j avant chaque prochain prélèvement
+  function rescheduleReminders(){
+    if (!LocalNotifications) return;
+    LocalNotifications.requestPermissions().then(function(){
+      LocalNotifications.getPending().then(function(p){
+        var pend = (p && p.notifications) ? p.notifications.map(function(n){ return { id: n.id }; }) : [];
+        var schedule = function(){
+          var subs = loadSubs();
+          var lead = 2;
+          var notifs = [];
+          subs.forEach(function(s, i){
+            var eff = effectiveDate(s.nextDate, s.cycle);
+            if (!eff) return;
+            var at = new Date(eff.getTime());
+            at.setDate(at.getDate() - lead);
+            at.setHours(10, 0, 0, 0);
+            if (at.getTime() <= Date.now()) return;   // trop tard pour ce cycle
+            notifs.push({
+              id: 1000 + i,
+              title: "💶 " + s.name + " bientôt prélevé",
+              body: s.name + " (" + formatEUR(parseFloat(s.amount)||0) + " €) sera prélevé dans " + lead + " jours. Tu l'utilises encore ?",
+              schedule: { at: at }
+            });
+          });
+          if (notifs.length) LocalNotifications.schedule({ notifications: notifs }).catch(function(){});
+        };
+        if (pend.length) LocalNotifications.cancel({ notifications: pend }).then(schedule).catch(schedule);
+        else schedule();
+      }).catch(function(){});
+    }).catch(function(){});
+  }
+
+  /* ========================================================
      INIT
   ======================================================== */
+  if (isNative) document.body.classList.add("native");
   seedDemoIfNeeded();
   renderAll();
+  admobInit();
+  rescheduleReminders();
 
 })();
 </script>
