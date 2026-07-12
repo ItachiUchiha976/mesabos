@@ -337,6 +337,50 @@
   .share-modal-inner img{width:100%; border-radius:16px; border:1px solid var(--card-border); margin-bottom:14px;}
   .share-modal-inner .btn{width:100%; justify-content:center; margin-bottom:8px;}
 
+  /* ---------- Bandeau renouvellements ---------- */
+  .renew-banner{
+    background:rgba(255,159,67,0.12); border:1px solid rgba(255,159,67,0.35);
+    border-radius:var(--radius-md); padding:12px 14px; margin-bottom:12px;
+    font-size:13px; color:#ffd3ac; font-weight:600;
+    display:flex; align-items:center; gap:8px;
+  }
+  .renew-banner b{color:#fff;}
+
+  /* ---------- Toggle mensuel / annuel ---------- */
+  .totals-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .view-toggle{display:inline-flex; background:rgba(255,255,255,0.08); border-radius:100px; padding:3px; gap:2px; flex:none;}
+  .view-toggle button{
+    border:none; background:transparent; color:var(--muted);
+    font-size:11.5px; font-weight:700; padding:5px 11px; border-radius:100px; cursor:pointer;
+  }
+  .view-toggle button.active{background:var(--accent); color:#04140f;}
+
+  /* ---------- Filtres catégories ---------- */
+  .filter-chips{
+    display:flex; gap:7px; overflow-x:auto; padding:2px 2px 10px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .filter-chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:none; border:1px solid var(--card-border); background:var(--card); color:var(--muted);
+    font-size:12px; font-weight:700; padding:7px 12px; border-radius:100px; cursor:pointer;
+  }
+  .chip.active{background:var(--accent-soft); border-color:var(--card-border-hover); color:var(--accent);}
+
+  /* ---------- Coût annuel par abo ---------- */
+  .sub-annual{color:#5c7086; font-weight:600;}
+
+  /* ---------- Carte activation notifications ---------- */
+  .notif-card{
+    background:var(--card); border:1px solid var(--card-border);
+    border-radius:var(--radius-md); padding:13px 14px; margin-top:12px;
+    display:none; align-items:center; justify-content:space-between; gap:10px;
+    font-size:12.5px; color:var(--muted); line-height:1.4;
+  }
+  .notif-card.show{display:flex;}
+  .notif-card b{color:var(--text);}
+  .notif-card .btn{flex:none;}
+
   @media (max-width:360px){
     .totals-value{font-size:32px;}
   }
@@ -357,10 +401,18 @@
     <button class="btn-install" id="installBtn" data-umami-event="install_click">📲 Installer</button>
   </header>
 
+  <div id="renewBannerSlot"></div>
+
   <div class="totals-card">
-    <div class="totals-label">Coût mensuel total</div>
+    <div class="totals-head">
+      <div class="totals-label" id="totalsLabel">Coût mensuel total</div>
+      <div class="view-toggle" id="viewToggle">
+        <button type="button" data-view="mensuel" class="active" data-umami-event="view_monthly">Par mois</button>
+        <button type="button" data-view="annuel" data-umami-event="view_annual">Par an</button>
+      </div>
+    </div>
     <div class="totals-value" id="totalMonthly">0,00 <small>€ / mois</small></div>
-    <div class="totals-sub">Soit environ <b id="totalAnnual">0,00 €</b> par an</div>
+    <div class="totals-sub" id="totalsSub">Soit environ <b>0,00 €</b> par an</div>
     <div class="totals-actions">
       <button class="btn btn-primary" id="btnShare" data-umami-event="share_click">📤 Partager mon total</button>
       <button class="btn btn-ghost" id="btnAddTop" data-umami-event="add_click_top">＋ Ajouter</button>
@@ -377,7 +429,15 @@
   <div id="exampleBannerSlot"></div>
 
   <div class="section-title">Tes abonnements <span class="count" id="subCount">0</span></div>
+  <div class="filter-chips" id="filterChips"></div>
   <div class="sub-list" id="subList"></div>
+
+  <button class="btn btn-ghost btn-block" id="btnExportCsv" style="margin-top:12px;" data-umami-event="export_csv">📤 Exporter en CSV</button>
+
+  <div class="notif-card" id="notifCard">
+    <span>🔔 Active les rappels pour être prévenu <b>2 jours avant</b> chaque prélèvement. 100% local, rien n'est envoyé.</span>
+    <button class="btn btn-primary" id="notifBtn" data-umami-event="notif_enable_click">Activer</button>
+  </div>
 
   <div class="email-card">
     <h3>💡 3 astuces gratuites</h3>
@@ -429,6 +489,7 @@
           <select id="f-category">
             <option value="Streaming">🎬 Streaming</option>
             <option value="Musique">🎵 Musique</option>
+            <option value="Cloud">☁️ Cloud</option>
             <option value="Sport">💪 Sport</option>
             <option value="Logiciel">💻 Logiciel</option>
             <option value="Presse">📰 Presse</option>
@@ -494,10 +555,13 @@
   var LS_SUBS = "mesabos_subs_v1";
   var LS_SEEDED = "mesabos_seeded_v1";
   var LS_ADDS = "mesabos_user_adds_v1";
+  var LS_VIEW = "mesabos_view_v1";        // "mensuel" | "annuel"
+  var LS_NOTIFIED = "mesabos_notified_v1"; // anti-doublon des rappels web déjà affichés
 
   var CATS = {
     Streaming: { emoji: "🎬", color: "#ff5f6d" },
     Musique:   { emoji: "🎵", color: "#8e6bff" },
+    Cloud:     { emoji: "☁️", color: "#4d7cff" },
     Sport:     { emoji: "💪", color: "#ff9f43" },
     Logiciel:  { emoji: "💻", color: "#22c1dc" },
     Presse:    { emoji: "📰", color: "#f7d154" },
@@ -520,7 +584,7 @@
   function isoPlusDays(n){
     var d = new Date();
     d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
+    return isoDateLocal(d);
   }
 
   function monthlyEquivalent(amount, cycle){
@@ -569,6 +633,15 @@
     return Math.round((d.getTime() - today.getTime()) / 86400000);
   }
 
+  // Date locale au format AAAA-MM-JJ (toISOString décalerait d'un jour en fuseau UTC+)
+  function isoDateLocal(d){
+    var mm = String(d.getMonth() + 1);
+    var dd = String(d.getDate());
+    if (mm.length < 2) mm = "0" + mm;
+    if (dd.length < 2) dd = "0" + dd;
+    return d.getFullYear() + "-" + mm + "-" + dd;
+  }
+
   /* ========================================================
      STOCKAGE
   ======================================================== */
@@ -583,7 +656,30 @@
 
   function saveSubs(subs){
     try{ localStorage.setItem(LS_SUBS, JSON.stringify(subs)); }catch(e){}
-    try{ rescheduleReminders(); }catch(e){}   // reprogramme les rappels à chaque modif
+    try{ rescheduleReminders(); }catch(e){}   // reprogramme les rappels natifs à chaque modif
+    try{ checkWebReminders(); }catch(e){}     // vérifie les rappels web (PWA) à chaque modif
+  }
+
+  // Migration douce : les anciennes entrées sans catégorie / date / cycle reçoivent des valeurs
+  // par défaut — AUCUNE donnée utilisateur n'est perdue.
+  function migrateSubs(){
+    var subs = loadSubs();
+    var changed = false;
+    subs.forEach(function(s){
+      if (!s.id){ s.id = uid(); changed = true; }
+      if (!s.category || !CATS[s.category]){ s.category = "Autre"; changed = true; }
+      if (!s.cycle || !CYCLE_LABEL[s.cycle]){ s.cycle = "mensuel"; changed = true; }
+      var d = s.nextDate ? new Date(s.nextDate + "T00:00:00") : null;
+      if (!d || isNaN(d.getTime())){ s.nextDate = isoPlusDays(30); changed = true; }
+      if (typeof s.amount !== "number"){
+        var a = parseFloat(s.amount);
+        s.amount = isNaN(a) ? 0 : a;
+        changed = true;
+      }
+    });
+    if (changed){
+      try{ localStorage.setItem(LS_SUBS, JSON.stringify(subs)); }catch(e){}
+    }
   }
 
   function seedDemoIfNeeded(){
@@ -605,11 +701,64 @@
     return subs.reduce(function(sum, s){ return sum + monthlyEquivalent(parseFloat(s.amount) || 0, s.cycle); }, 0);
   }
 
+  function getView(){
+    try{ return localStorage.getItem(LS_VIEW) === "annuel" ? "annuel" : "mensuel"; }catch(e){ return "mensuel"; }
+  }
+  function setView(v){
+    try{ localStorage.setItem(LS_VIEW, v); }catch(e){}
+  }
+
   function renderTotals(subs){
     var monthly = computeMonthlyTotal(subs);
     var annual = monthly * 12;
-    document.getElementById("totalMonthly").innerHTML = formatEUR(monthly) + " <small>€ / mois</small>";
-    document.getElementById("totalAnnual").textContent = formatEUR(annual) + " €";
+    var view = getView();
+    var label = document.getElementById("totalsLabel");
+    var valueEl = document.getElementById("totalMonthly");
+    var subEl = document.getElementById("totalsSub");
+
+    if (view === "annuel"){
+      label.textContent = "Coût annuel total";
+      valueEl.innerHTML = formatEUR(annual) + " <small>€ / an</small>";
+      subEl.innerHTML = "Soit environ <b>" + formatEUR(monthly) + " €</b> par mois";
+    } else {
+      label.textContent = "Coût mensuel total";
+      valueEl.innerHTML = formatEUR(monthly) + " <small>€ / mois</small>";
+      subEl.innerHTML = "Soit environ <b>" + formatEUR(annual) + " €</b> par an";
+    }
+
+    var toggle = document.getElementById("viewToggle");
+    Array.prototype.forEach.call(toggle.querySelectorAll("button"), function(b){
+      b.classList.toggle("active", b.getAttribute("data-view") === view);
+    });
+  }
+
+  document.getElementById("viewToggle").addEventListener("click", function(e){
+    var btn = e.target.closest ? e.target.closest("button[data-view]") : null;
+    if (!btn) return;
+    setView(btn.getAttribute("data-view"));
+    renderTotals(loadSubs());
+  });
+
+  /* ========================================================
+     RENDU — BANDEAU RENOUVELLEMENTS (7 prochains jours)
+  ======================================================== */
+  function renderRenewBanner(subs){
+    var slot = document.getElementById("renewBannerSlot");
+    var count = 0;
+    var sum = 0;
+    subs.forEach(function(s){
+      var eff = effectiveDate(s.nextDate, s.cycle);
+      if (!eff) return;
+      var days = daysUntil(eff);
+      if (days >= 0 && days <= 7){
+        count++;
+        sum += parseFloat(s.amount) || 0;
+      }
+    });
+    if (!count){ slot.innerHTML = ""; return; }
+    slot.innerHTML =
+      '<div class="renew-banner">⚠️ <span><b>' + count + '</b> renouvellement' + (count > 1 ? 's' : '') +
+      ' cette semaine — <b>' + formatEUR(sum) + ' €</b></span></div>';
   }
 
   /* ========================================================
@@ -679,18 +828,50 @@
   /* ========================================================
      RENDU — LISTE
   ======================================================== */
+  var currentFilter = "Tous";
+
+  function renderFilterChips(subs){
+    var el = document.getElementById("filterChips");
+    var cats = [];
+    subs.forEach(function(s){ if (cats.indexOf(s.category) === -1) cats.push(s.category); });
+    if (currentFilter !== "Tous" && cats.indexOf(currentFilter) === -1) currentFilter = "Tous";
+
+    if (subs.length < 2){ el.innerHTML = ""; el.style.display = "none"; return; }
+    el.style.display = "flex";
+    el.innerHTML = "";
+    ["Tous"].concat(cats).forEach(function(cat){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip" + (cat === currentFilter ? " active" : "");
+      b.textContent = (cat === "Tous") ? "Tous" : ((CATS[cat] ? CATS[cat].emoji + " " : "") + cat);
+      b.addEventListener("click", function(){
+        currentFilter = cat;
+        var fresh = loadSubs();
+        renderFilterChips(fresh);
+        renderList(fresh);
+      });
+      el.appendChild(b);
+    });
+  }
+
   function renderList(subs){
     var list = document.getElementById("subList");
     var countEl = document.getElementById("subCount");
     list.innerHTML = "";
-    countEl.textContent = String(subs.length);
+
+    var visible = (currentFilter === "Tous") ? subs : subs.filter(function(s){ return s.category === currentFilter; });
+    countEl.textContent = String(visible.length);
 
     if (!subs.length){
       list.innerHTML = '<div class="empty-list"><span class="emoji">🗂️</span>Aucun abonnement pour l\'instant.<br>Appuie sur « ＋ » pour ajouter le premier.</div>';
       return;
     }
+    if (!visible.length){
+      list.innerHTML = '<div class="empty-list"><span class="emoji">🔎</span>Aucun abonnement dans cette catégorie.</div>';
+      return;
+    }
 
-    var withDates = subs.map(function(s){
+    var withDates = visible.map(function(s){
       var eff = effectiveDate(s.nextDate, s.cycle) || todayMidnight();
       return { sub: s, eff: eff, days: daysUntil(eff) };
     });
@@ -709,12 +890,18 @@
       else dayLabel = "Dans " + days + " j";
 
       var badgeHTML = "";
-      if (days <= 3){
-        var urgentClass = (days <= 1) ? " urgent" : "";
-        badgeHTML = '<span class="sub-badge' + urgentClass + '">' + dayLabel + '</span>';
+      if (days <= 7){
+        var urgentClass = (days <= 2) ? " urgent" : "";
+        var badgeTxt = (days <= 1) ? ("⚠️ " + dayLabel) : ("⚠️ Renouvelle dans " + days + " j");
+        badgeHTML = '<span class="sub-badge' + urgentClass + '">' + badgeTxt + '</span>';
       } else {
         badgeHTML = '<span class="sub-days">' + dayLabel + '</span>';
       }
+
+      var monthlyEq = monthlyEquivalent(parseFloat(s.amount) || 0, s.cycle);
+      var eqTxt = (s.cycle === "annuel")
+        ? "= " + formatEUR(monthlyEq) + " €/mois"
+        : "= " + formatEUR(monthlyEq * 12) + " €/an";
 
       var card = document.createElement("div");
       card.className = "sub-card";
@@ -724,7 +911,8 @@
         '<div class="sub-avatar" style="background:' + color + '22; color:' + color + '">' + catMeta.emoji + '</div>' +
         '<div class="sub-mid">' +
           '<div class="sub-name">' + escapeHTML(s.name) + (s.example ? '<span class="sub-pill-example">exemple</span>' : '') + '</div>' +
-          '<div class="sub-amount">' + formatEUR(parseFloat(s.amount) || 0) + ' € / ' + (CYCLE_LABEL[s.cycle] || s.cycle) + '</div>' +
+          '<div class="sub-amount">' + formatEUR(parseFloat(s.amount) || 0) + ' € / ' + (CYCLE_LABEL[s.cycle] || s.cycle) +
+            ' <span class="sub-annual">' + eqTxt + '</span></div>' +
         '</div>' +
         '<div class="sub-right">' + badgeHTML + '</div>';
       card.addEventListener("click", function(){ openEditSheet(s.id); });
@@ -743,11 +931,135 @@
   ======================================================== */
   function renderAll(){
     var subs = loadSubs();
+    renderRenewBanner(subs);
     renderTotals(subs);
     renderCategoryBar(subs);
     renderExampleBanner(subs);
+    renderFilterChips(subs);
     renderList(subs);
   }
+
+  /* ========================================================
+     EXPORT CSV (téléchargement 100% local)
+  ======================================================== */
+  function csvNum(n){
+    return (Math.round(n * 100) / 100).toFixed(2).replace(".", ",");
+  }
+  function csvField(v){
+    v = (v == null) ? "" : String(v);
+    if (/[";\n\r]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+    return v;
+  }
+  function exportCSV(){
+    var subs = loadSubs();
+    if (!subs.length) return;
+    var rows = [["Nom", "Catégorie", "Montant (€)", "Cycle", "Coût mensuel (€)", "Coût annuel (€)", "Prochain prélèvement"]];
+    subs.forEach(function(s){
+      var amount = parseFloat(s.amount) || 0;
+      var m = monthlyEquivalent(amount, s.cycle);
+      var eff = effectiveDate(s.nextDate, s.cycle);
+      rows.push([
+        s.name, s.category, csvNum(amount), s.cycle,
+        csvNum(m), csvNum(m * 12),
+        eff ? isoDateLocal(eff) : ""
+      ]);
+    });
+    var monthly = computeMonthlyTotal(subs);
+    rows.push(["TOTAL", "", "", "", csvNum(monthly), csvNum(monthly * 12), ""]);
+
+    var csv = String.fromCharCode(0xFEFF) + rows.map(function(r){ return r.map(csvField).join(";"); }).join("\r\n");
+    var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "mes-abos.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+  document.getElementById("btnExportCsv").addEventListener("click", exportCSV);
+
+  /* ========================================================
+     RAPPELS WEB (PWA) — Notification API, 100% local
+     Vérification au chargement + après chaque modif : si un abo
+     est prélevé dans ≤ 2 jours, une notification locale est
+     affichée (une seule fois par occurrence, anti-doublon).
+  ======================================================== */
+  function webNotifSupported(){
+    return !isNative && ("Notification" in window);
+  }
+
+  function checkWebReminders(){
+    if (!webNotifSupported() || Notification.permission !== "granted") return;
+
+    var store = {};
+    try{ store = JSON.parse(localStorage.getItem(LS_NOTIFIED) || "{}") || {}; }catch(e){ store = {}; }
+
+    var today = todayMidnight();
+    // Purge des entrées trop vieilles (> 10 jours)
+    Object.keys(store).forEach(function(k){
+      var d = new Date(store[k] + "T00:00:00");
+      if (isNaN(d.getTime()) || (today.getTime() - d.getTime()) > 10 * 86400000) delete store[k];
+    });
+
+    var toNotify = [];
+    loadSubs().forEach(function(s){
+      var eff = effectiveDate(s.nextDate, s.cycle);
+      if (!eff) return;
+      var days = daysUntil(eff);
+      if (days < 0 || days > 2) return;
+      var key = s.id + "_" + isoDateLocal(eff);
+      if (store[key]) return;
+      store[key] = isoDateLocal(today);
+      var when = (days === 0) ? "aujourd'hui" : (days === 1 ? "demain" : "dans " + days + " jours");
+      toNotify.push({
+        tag: "mesabos-" + s.id,
+        title: "💶 " + s.name + " bientôt prélevé",
+        body: s.name + " (" + formatEUR(parseFloat(s.amount) || 0) + " €) sera prélevé " + when + ". Tu l'utilises encore ?"
+      });
+    });
+
+    if (!toNotify.length) return;
+    try{ localStorage.setItem(LS_NOTIFIED, JSON.stringify(store)); }catch(e){}
+
+    var show = function(reg){
+      toNotify.forEach(function(n){
+        var opts = { body: n.body, icon: "icon-192.png", badge: "icon-192.png", tag: n.tag };
+        if (reg && reg.showNotification){
+          try{ reg.showNotification(n.title, opts); }catch(e){ try{ new Notification(n.title, opts); }catch(e2){} }
+        } else {
+          try{ new Notification(n.title, opts); }catch(e){}
+        }
+      });
+    };
+    if ("serviceWorker" in navigator && navigator.serviceWorker.getRegistration){
+      navigator.serviceWorker.getRegistration().then(show).catch(function(){ show(null); });
+    } else {
+      show(null);
+    }
+  }
+
+  var notifCard = document.getElementById("notifCard");
+  var notifBtn = document.getElementById("notifBtn");
+
+  function updateNotifCard(){
+    if (webNotifSupported() && Notification.permission === "default"){
+      notifCard.classList.add("show");
+    } else {
+      notifCard.classList.remove("show");
+    }
+  }
+
+  notifBtn.addEventListener("click", function(){
+    if (!webNotifSupported()) return;
+    try{
+      Notification.requestPermission().then(function(perm){
+        updateNotifCard();
+        if (perm === "granted") checkWebReminders();
+      }).catch(function(){ updateNotifCard(); });
+    }catch(e){ updateNotifCard(); }
+  });
 
   /* ========================================================
      FORMULAIRE AJOUT / ÉDITION
@@ -1227,10 +1539,13 @@
      INIT
   ======================================================== */
   if (isNative) document.body.classList.add("native");
+  migrateSubs();          // migration douce des anciennes données (aucune perte)
   seedDemoIfNeeded();
   renderAll();
   admobInit();
-  rescheduleReminders();
+  rescheduleReminders();  // rappels natifs (Capacitor)
+  updateNotifCard();      // propose d'activer les rappels web (PWA)
+  checkWebReminders();    // vérification au chargement : abos prélevés dans ≤ 2 j
 
 })();
 </script>
