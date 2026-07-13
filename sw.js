@@ -1,5 +1,5 @@
 // Service worker "Mes Abos" — cache offline minimal
-const CACHE_NAME = "mesabos-cache-v3";
+const CACHE_NAME = "mesabos-cache-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -34,36 +34,20 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // HTML/navigation = network-first (évite de servir un index.html périmé)
+  // Network-first pour TOUTES les ressources (HTML + reste) : évite de servir un
+  // contenu périmé après une mise à jour. Repli sur le cache uniquement hors-ligne.
   const isDoc = req.mode === "navigate" || (req.headers.get("accept") || "").indexOf("text/html") !== -1;
-  if (isDoc) {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return res;
-        })
-        .catch(() => caches.match(req).then((c) => c || caches.match("./index.html")))
-    );
-    return;
-  }
-
-  // Autres ressources = cache-first
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-    })
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(req).then((c) => c || (isDoc ? caches.match("./index.html") : undefined))
+      )
   );
 });

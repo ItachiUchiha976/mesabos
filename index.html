@@ -416,7 +416,7 @@
     <div class="totals-actions">
       <button class="btn btn-primary" id="btnShare" data-umami-event="share_click">📤 Partager mon total</button>
       <button class="btn btn-ghost" id="btnAddTop" data-umami-event="add_click_top">＋ Ajouter</button>
-      <button class="btn btn-ghost" id="proBtn" data-umami-event="pro_click">✨ Sans pub</button>
+      <button class="btn btn-ghost" id="proBtn" data-umami-event="pro_click">✨ Pro</button>
     </div>
   </div>
 
@@ -435,7 +435,7 @@
   <button class="btn btn-ghost btn-block" id="btnExportCsv" style="margin-top:12px;" data-umami-event="export_csv">📤 Exporter en CSV</button>
 
   <div class="notif-card" id="notifCard">
-    <span>🔔 Active les rappels pour être prévenu <b>2 jours avant</b> chaque prélèvement. 100% local, rien n'est envoyé.</span>
+    <span>🔔 Active les rappels : à <b>chaque ouverture de l'app</b>, on te prévient si un abonnement est prélevé dans <b>≤ 3 jours</b>. 100% local, aucune notif en arrière-plan, rien n'est envoyé à un serveur.</span>
     <button class="btn btn-primary" id="notifBtn" data-umami-event="notif_enable_click">Activer</button>
   </div>
 
@@ -451,7 +451,7 @@
     <div class="email-msg" id="emailMsg"></div>
   </div>
 
-  <p class="trust-note">🔔 Sur l'app installée, on te prévient <b>2 jours avant</b> chaque prélèvement — pour ne plus jamais être surpris.<br>🔒 Toutes tes données restent uniquement sur ton appareil. Aucune donnée d'abonnement n'est envoyée à un serveur.</p>
+  <p class="trust-note">🔔 Ici (web) : active les rappels ci-dessus — tu es prévenu à chaque ouverture si un abo tombe dans ≤ 3 jours (pas de notif quand l'app est fermée). Sur l'app Android installée : rappel automatique 2 jours avant, même app fermée.<br>🔒 Toutes tes données restent uniquement sur ton appareil. Aucune donnée d'abonnement n'est envoyée à un serveur.</p>
 
 </div>
 
@@ -513,25 +513,14 @@
   </div>
 </div>
 
-<!-- Interstitiel house-ad -->
-<div class="interstitial" id="interstitial">
-  <div class="inter-card">
-    <div class="inter-tag">Publicité</div>
-    <div class="emoji-big">😱</div>
-    <h3>Tu paies <span id="interAmount">—</span>&nbsp;€/mois en abonnements ?</h3>
-    <p>Reprends le contrôle de ton argent avec notre outil <b>Contrôle Argent</b> : identifie en 10 minutes où part ton argent chaque mois.</p>
-    <a class="inter-cta" href="https://tonargentexplique.fr/controle-argent/" target="_blank" rel="noopener noreferrer" data-umami-event="interstitial_cta_click">Reprendre le contrôle →</a>
-    <button class="inter-skip" id="interSkip" disabled>Continuer (5)</button>
-  </div>
-</div>
-
-<!-- Premium / sans pub -->
+<!-- Premium : sans pub + export CSV illimité (utilitaire = pas d'interstitiel, bannière seule) -->
 <div class="interstitial" id="proOverlay">
   <div class="inter-card">
     <div class="emoji-big">✨</div>
-    <h3>Mes Abos sans pub</h3>
-    <p>Supprime <b>définitivement</b> la publicité et soutiens l'app. Les <b>rappels de renouvellement sont inclus gratuitement</b> pour tout le monde. Un seul paiement, à vie.</p>
-    <a class="inter-cta" id="proBuy" href="javascript:void(0)">Passer sans pub</a>
+    <h3>Mes Abos Pro — 4,99&nbsp;€</h3>
+    <p>Supprime <b>définitivement</b> la publicité et débloque l'<b>export CSV</b> illimité. Paiement unique, à vie. Les <b>rappels de renouvellement restent gratuits</b> pour tout le monde.</p>
+    <a class="inter-cta" id="proBuy" href="javascript:void(0)">Passer Pro — 4,99&nbsp;€</a>
+    <button class="inter-skip" id="proRewarded" style="margin-bottom:10px;">🎬 Regarder une pub pour exporter une fois</button>
     <button class="inter-skip" id="proClose">Plus tard</button>
   </div>
 </div>
@@ -554,7 +543,6 @@
   ======================================================== */
   var LS_SUBS = "mesabos_subs_v1";
   var LS_SEEDED = "mesabos_seeded_v1";
-  var LS_ADDS = "mesabos_user_adds_v1";
   var LS_VIEW = "mesabos_view_v1";        // "mensuel" | "annuel"
   var LS_NOTIFIED = "mesabos_notified_v1"; // anti-doublon des rappels web déjà affichés
 
@@ -744,21 +732,27 @@
   ======================================================== */
   function renderRenewBanner(subs){
     var slot = document.getElementById("renewBannerSlot");
-    var count = 0;
-    var sum = 0;
+    var count7 = 0, sum7 = 0, count30 = 0, sum30 = 0;
     subs.forEach(function(s){
       var eff = effectiveDate(s.nextDate, s.cycle);
       if (!eff) return;
       var days = daysUntil(eff);
-      if (days >= 0 && days <= 7){
-        count++;
-        sum += parseFloat(s.amount) || 0;
-      }
+      if (days < 0 || days > 30) return;
+      var amt = parseFloat(s.amount) || 0;
+      count30++; sum30 += amt;
+      if (days <= 7){ count7++; sum7 += amt; }
     });
-    if (!count){ slot.innerHTML = ""; return; }
-    slot.innerHTML =
-      '<div class="renew-banner">⚠️ <span><b>' + count + '</b> renouvellement' + (count > 1 ? 's' : '') +
-      ' cette semaine — <b>' + formatEUR(sum) + ' €</b></span></div>';
+    if (!count30){ slot.innerHTML = ""; return; }
+
+    var parts = [];
+    if (count7){
+      parts.push('<b>' + count7 + '</b> sous 7&nbsp;j (<b>' + formatEUR(sum7) + ' €</b>)');
+    }
+    if (count30 > count7){
+      parts.push('<b>' + count30 + '</b> sous 30&nbsp;j (<b>' + formatEUR(sum30) + ' €</b>)');
+    }
+    var icon = count7 ? "⚠️" : "🔔";
+    slot.innerHTML = '<div class="renew-banner">' + icon + ' <span>' + parts.join(' · ') + '</span></div>';
   }
 
   /* ========================================================
@@ -891,7 +885,7 @@
 
       var badgeHTML = "";
       if (days <= 7){
-        var urgentClass = (days <= 2) ? " urgent" : "";
+        var urgentClass = (days <= 3) ? " urgent" : "";
         var badgeTxt = (days <= 1) ? ("⚠️ " + dayLabel) : ("⚠️ Renouvelle dans " + days + " j");
         badgeHTML = '<span class="sub-badge' + urgentClass + '">' + badgeTxt + '</span>';
       } else {
@@ -978,13 +972,24 @@
     a.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   }
-  document.getElementById("btnExportCsv").addEventListener("click", exportCSV);
+  document.getElementById("btnExportCsv").addEventListener("click", function(){
+    if (!isProNow()){
+      var ov = document.getElementById("proOverlay");
+      if (ov) ov.classList.add("open");
+      return;
+    }
+    exportCSV();
+  });
 
   /* ========================================================
      RAPPELS WEB (PWA) — Notification API, 100% local
-     Vérification au chargement + après chaque modif : si un abo
-     est prélevé dans ≤ 2 jours, une notification locale est
+     Permission demandée UNIQUEMENT via le bouton dédié #notifBtn
+     (jamais automatiquement à l'ouverture). Une fois accordée,
+     vérification au chargement + après chaque modif : si un abo
+     est prélevé dans ≤ 3 jours, une notification locale est
      affichée (une seule fois par occurrence, anti-doublon).
+     Honnête : ceci ne fonctionne qu'à l'ouverture de l'app (pas de
+     push serveur, pas de réveil en arrière-plan — 100% local/web).
   ======================================================== */
   function webNotifSupported(){
     return !isNative && ("Notification" in window);
@@ -1008,7 +1013,7 @@
       var eff = effectiveDate(s.nextDate, s.cycle);
       if (!eff) return;
       var days = daysUntil(eff);
-      if (days < 0 || days > 2) return;
+      if (days < 0 || days > 3) return;
       var key = s.id + "_" + isoDateLocal(eff);
       if (store[key]) return;
       store[key] = isoDateLocal(today);
@@ -1178,13 +1183,6 @@
       saveSubs(subs);
       closeSheet();
       renderAll();
-
-      // Compteur d'ajouts utilisateur -> interstitiel au 3e ajout réel
-      var count = parseInt(localStorage.getItem(LS_ADDS) || "0", 10) + 1;
-      localStorage.setItem(LS_ADDS, String(count));
-      if (count === 3){
-        setTimeout(showInterstitial, 420);
-      }
     }
   });
 
@@ -1209,56 +1207,41 @@
   document.getElementById("btnAddTop").addEventListener("click", openAddSheet);
 
   /* ========================================================
-     INTERSTITIEL HOUSE-AD
+     PRO (4,99€ à vie) : sans pub + export CSV illimité
+     Layout pub safe : utilitaire = bannière seule, JAMAIS d'interstitiel.
   ======================================================== */
-  var interstitialEl = document.getElementById("interstitial");
-  var interSkip = document.getElementById("interSkip");
-  var interTimer = null;
-
-  function showInterstitial(){
-    if (isProNow()) return;   // Pro = sans pub
-    // Natif : vraie pub AdMob si prête, sinon repli house-ad (cross-promo)
-    if (AdMob && admobInterReady){ AdMob.showInterstitial().catch(function(){ showHouseInterstitial(); }); return; }
-    showHouseInterstitial();
-  }
-  function showHouseInterstitial(){
-    var subs = loadSubs();
-    var monthly = computeMonthlyTotal(subs);
-    document.getElementById("interAmount").textContent = formatEUR(monthly);
-    interstitialEl.classList.add("open");
-
-    var remaining = 5;
-    interSkip.disabled = true;
-    interSkip.textContent = "Continuer (" + remaining + ")";
-    clearInterval(interTimer);
-    interTimer = setInterval(function(){
-      remaining--;
-      if (remaining <= 0){
-        clearInterval(interTimer);
-        interSkip.disabled = false;
-        interSkip.textContent = "Continuer";
-      } else {
-        interSkip.textContent = "Continuer (" + remaining + ")";
-      }
-    }, 1000);
-  }
-
-  interSkip.addEventListener("click", function(){
-    if (interSkip.disabled) return;
-    clearInterval(interTimer);
-    interstitialEl.classList.remove("open");
-  });
-
-  /* ---- PRO / sans pub ---- */
-  (function(){
-    var isPro = !!localStorage.getItem("mesabos_premium");
+  function updateProUI(){
+    var isPro = isProNow();
     var bannerEl = document.querySelector(".banner-ad");
     var proBtn = document.getElementById("proBtn");
+    var csvBtn = document.getElementById("btnExportCsv");
+    if (bannerEl) bannerEl.style.display = isPro ? "none" : "";
+    if (proBtn) proBtn.style.display = isPro ? "none" : "";
+    if (csvBtn) csvBtn.textContent = isPro ? "📤 Exporter en CSV" : "📤 Exporter en CSV (Pro)";
+  }
+
+  // Placeholder pub récompensée (web, sobre) : accorde la récompense directement avec une
+  // mention honnête. À brancher sur @capacitor-community/admob (rewarded) côté app Android.
+  function showRewardedAd(onReward){
+    alert("🎬 Pub vidéo bientôt disponible via l'app Android.\nEn attendant, ton export est débloqué gratuitement cette fois !");
+    onReward();
+  }
+
+  (function(){
     var ov = document.getElementById("proOverlay");
-    if (isPro){ if(bannerEl) bannerEl.style.display="none"; if(proBtn) proBtn.style.display="none"; }
+    var proBtn = document.getElementById("proBtn");
     if (proBtn) proBtn.addEventListener("click", function(){ if(ov) ov.classList.add("open"); });
     var pc = document.getElementById("proClose"); if(pc) pc.addEventListener("click", function(){ if(ov) ov.classList.remove("open"); });
-    var pb = document.getElementById("proBuy"); if(pb) pb.addEventListener("click", function(){ if(ov) ov.classList.remove("open"); /* Google Play Billing à brancher à la publication */ });
+    var pb = document.getElementById("proBuy");
+    if (pb) pb.addEventListener("click", function(){
+      alert("Le paiement Mes Abos Pro (4,99 €, à vie) sera bientôt disponible via le Google Play Store.\nReviens ici dès que l'app est publiée pour supprimer la pub et débloquer l'export CSV illimité.");
+    });
+    var pr = document.getElementById("proRewarded");
+    if (pr) pr.addEventListener("click", function(){
+      if (ov) ov.classList.remove("open");
+      showRewardedAd(exportCSV);
+    });
+    updateProUI();
   })();
 
   /* ========================================================
@@ -1486,20 +1469,16 @@
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
   var AdMob = (isNative && Cap.Plugins) ? Cap.Plugins.AdMob : null;
   var LocalNotifications = (isNative && Cap.Plugins) ? Cap.Plugins.LocalNotifications : null;
-  var admobInterReady = false;
 
   function isProNow(){ return !!localStorage.getItem("mesabos_premium"); }
 
+  // Utilitaire = bannière seule, JAMAIS d'interstitiel (voir section PRO plus haut).
   function admobInit(){
     if (!AdMob || isProNow()) return;
     AdMob.initialize({ initializeForTesting: true }).then(function(){
-      try{ AdMob.addListener('interstitialAdDismissed', function(){ admobInterReady=false; prepAdmobInter(); }); }catch(e){}
-      try{ AdMob.addListener('interstitialAdFailedToShow', function(){ admobInterReady=false; prepAdmobInter(); }); }catch(e){}
-      prepAdmobInter();
       showAdmobBanner();
     }).catch(function(){});
   }
-  function prepAdmobInter(){ if(!AdMob) return; AdMob.prepareInterstitial({ adId:'ca-app-pub-3940256099942544/1033173712', isTesting:true }).then(function(){ admobInterReady=true; }).catch(function(){ admobInterReady=false; }); }
   function showAdmobBanner(){ if(!AdMob || isProNow()) return; AdMob.showBanner({ adId:'ca-app-pub-3940256099942544/6300978111', adSize:'ADAPTIVE_BANNER', position:'BOTTOM_CENTER', margin:0, isTesting:true }).catch(function(){}); }
   function removeAdmob(){ if(!AdMob) return; try{ AdMob.removeBanner(); }catch(e){} }
 
@@ -1545,7 +1524,7 @@
   admobInit();
   rescheduleReminders();  // rappels natifs (Capacitor)
   updateNotifCard();      // propose d'activer les rappels web (PWA)
-  checkWebReminders();    // vérification au chargement : abos prélevés dans ≤ 2 j
+  checkWebReminders();    // vérification au chargement : abos prélevés dans ≤ 3 j
 
 })();
 </script>
