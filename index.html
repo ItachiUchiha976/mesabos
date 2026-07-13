@@ -585,16 +585,25 @@
     }
   }
 
-  function addCycle(d, cycle){
+  // Ajoute des mois en clampant le jour au dernier jour du mois cible (31/01 + 1 mois = 28/02, pas 03/03)
+  function addMonthsClamped(d, months){
+    var day = d.getDate();
     var nd = new Date(d.getTime());
-    switch(cycle){
-      case "mensuel": nd.setMonth(nd.getMonth() + 1); break;
-      case "annuel": nd.setFullYear(nd.getFullYear() + 1); break;
-      case "hebdomadaire": nd.setDate(nd.getDate() + 7); break;
-      case "trimestriel": nd.setMonth(nd.getMonth() + 3); break;
-      default: nd.setMonth(nd.getMonth() + 1);
-    }
+    nd.setDate(1);                        // évite le débordement de mois pendant l'incrémentation
+    nd.setMonth(nd.getMonth() + months);
+    var lastDay = new Date(nd.getFullYear(), nd.getMonth() + 1, 0).getDate();
+    nd.setDate(Math.min(day, lastDay));    // clampe au dernier jour du mois cible si besoin
     return nd;
+  }
+
+  function addCycle(d, cycle){
+    switch(cycle){
+      case "mensuel": return addMonthsClamped(d, 1);
+      case "annuel": return addMonthsClamped(d, 12);
+      case "hebdomadaire": { var nd = new Date(d.getTime()); nd.setDate(nd.getDate() + 7); return nd; }
+      case "trimestriel": return addMonthsClamped(d, 3);
+      default: return addMonthsClamped(d, 1);
+    }
   }
 
   function todayMidnight(){
