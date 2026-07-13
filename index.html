@@ -43,6 +43,8 @@
     --accent-soft:rgba(46,213,158,0.14);
     --warn:#ff9f43;
     --danger:#ff5f6d;
+    --accent-wash:rgba(46,213,158,0.16);
+    --accent-shadow:rgba(46,213,158,0.45);
     --radius-lg:22px;
     --radius-md:16px;
     --radius-sm:11px;
@@ -101,7 +103,7 @@
 
   /* ---------- Totals card ---------- */
   .totals-card{
-    background: linear-gradient(160deg, rgba(46,213,158,0.16), rgba(46,213,158,0.02) 60%);
+    background: linear-gradient(160deg, var(--accent-wash), transparent 60%);
     border:1px solid var(--card-border-hover);
     border-radius: var(--radius-lg);
     padding:20px 20px 18px;
@@ -112,7 +114,7 @@
   .totals-card::after{
     content:"";
     position:absolute; right:-40px; top:-40px; width:160px; height:160px;
-    background: radial-gradient(circle, rgba(46,213,158,0.35), transparent 70%);
+    background: radial-gradient(circle, var(--card-border-hover), transparent 70%);
     pointer-events:none;
   }
   .totals-label{font-size:12.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.6px;}
@@ -251,7 +253,7 @@
     width:58px; height:58px; border-radius:50%; border:none; cursor:pointer;
     background:linear-gradient(160deg, var(--accent), var(--accent-strong));
     color:#04140f; font-size:28px; font-weight:400;
-    box-shadow: 0 8px 24px rgba(46,213,158,0.45), 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 24px var(--accent-shadow), 0 2px 8px rgba(0,0,0,0.3);
     display:flex; align-items:center; justify-content:center;
   }
   .fab:active{transform:scale(0.93);}
@@ -380,6 +382,22 @@
   .notif-card.show{display:flex;}
   .notif-card b{color:var(--text);}
   .notif-card .btn{flex:none;}
+
+  /* ---------- Thèmes de couleur (Pro) ---------- */
+  .theme-teaser{
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    margin:2px 0 16px;
+  }
+  .theme-teaser .dot{width:16px; height:16px; border-radius:50%; flex:none; border:1px solid rgba(255,255,255,0.25);}
+  .theme-grid{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin:4px 0 6px;}
+  .theme-opt{
+    width:54px; height:54px; border-radius:16px; flex:none; cursor:pointer;
+    border:2px solid transparent; display:flex; align-items:center; justify-content:center;
+    font-size:20px; color:#04140f; font-weight:900;
+  }
+  .theme-opt.active{border-color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,0.16);}
+  .theme-opt-label{display:block; text-align:center; font-size:10.5px; color:var(--muted); margin-top:5px;}
+  .theme-opt-wrap{width:54px;}
 
   @media (max-width:360px){
     .totals-value{font-size:32px;}
@@ -513,15 +531,36 @@
   </div>
 </div>
 
-<!-- Premium : sans pub + export CSV illimité (utilitaire = pas d'interstitiel, bannière seule) -->
+<!-- Premium : sans pub + export CSV illimité + thèmes (utilitaire = pas d'interstitiel, bannière seule) -->
 <div class="interstitial" id="proOverlay">
   <div class="inter-card">
     <div class="emoji-big">✨</div>
     <h3>Mes Abos Pro — 4,99&nbsp;€</h3>
-    <p>Supprime <b>définitivement</b> la publicité et débloque l'<b>export CSV</b> illimité. Paiement unique, à vie. Les <b>rappels de renouvellement restent gratuits</b> pour tout le monde.</p>
+    <p>Supprime <b>définitivement</b> la publicité, débloque l'<b>export CSV</b> illimité et <b>6 thèmes de couleur</b> pour personnaliser l'appli. Paiement unique, à vie. Les <b>rappels de renouvellement restent gratuits</b> pour tout le monde.</p>
+    <div class="theme-teaser" aria-hidden="true">
+      <span class="dot" style="background:#2ed59e"></span>
+      <span class="dot" style="background:#3aa0ff"></span>
+      <span class="dot" style="background:#a06bff"></span>
+      <span class="dot" style="background:#ff6b9e"></span>
+      <span class="dot" style="background:#ff9f43"></span>
+      <span class="dot" style="background:#f7d154"></span>
+    </div>
     <a class="inter-cta" id="proBuy" href="javascript:void(0)">Passer Pro — 4,99&nbsp;€</a>
     <button class="inter-skip" id="proRewarded" style="margin-bottom:10px;">🎬 Regarder une pub pour exporter une fois</button>
     <button class="inter-skip" id="proClose">Plus tard</button>
+  </div>
+</div>
+
+<!-- Thèmes (Pro uniquement) : ouvert via le bouton qui remplace "✨ Pro" une fois débloqué -->
+<div class="overlay" id="themeOverlay">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle"></div>
+    <h2>🎨 Couleur de l'appli</h2>
+    <p style="margin:-10px 0 16px; font-size:12.5px; color:var(--muted); line-height:1.4;">Merci d'être Pro 💚 Choisis ta couleur, elle est appliquée tout de suite et reste sur cet appareil.</p>
+    <div class="theme-grid" id="themeGrid"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost btn-block" id="themeCloseBtn">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -558,6 +597,83 @@
   var SWATCH_COLORS = ["#2ed59e", "#ff5f6d", "#8e6bff", "#ff9f43", "#22c1dc", "#f7d154", "#7f8fa6", "#4d7cff"];
 
   var CYCLE_LABEL = { mensuel: "mois", annuel: "an", hebdomadaire: "semaine", trimestriel: "trimestre" };
+
+  /* ========================================================
+     THÈMES DE COULEUR (Pro) — recolore l'accent de toute l'appli.
+     100% local (localStorage), aucune donnée envoyée nulle part.
+     Se réinitialise sur "green" si le statut Pro disparaît un jour.
+     Déclaré tôt (avant tout appel à updateProUI/applyTheme) pour que
+     THEMES soit déjà rempli quand la section PRO l'utilise.
+  ======================================================== */
+  var LS_THEME = "mesabos_theme";
+  var THEMES = [
+    { key: "green",  label: "Menthe",   accent: "#2ed59e", strong: "#20c090", soft: "rgba(46,213,158,0.14)",  glow: "rgba(46,213,158,0.35)", wash: "rgba(46,213,158,0.16)",  shadow: "rgba(46,213,158,0.45)" },
+    { key: "blue",   label: "Océan",    accent: "#3aa0ff", strong: "#1f7fe0", soft: "rgba(58,160,255,0.14)",  glow: "rgba(58,160,255,0.35)", wash: "rgba(58,160,255,0.16)",  shadow: "rgba(58,160,255,0.45)" },
+    { key: "purple", label: "Violet",   accent: "#a06bff", strong: "#8347e6", soft: "rgba(160,107,255,0.14)", glow: "rgba(160,107,255,0.35)", wash: "rgba(160,107,255,0.16)", shadow: "rgba(160,107,255,0.45)" },
+    { key: "pink",   label: "Rose",     accent: "#ff6b9e", strong: "#e6477f", soft: "rgba(255,107,158,0.14)", glow: "rgba(255,107,158,0.35)", wash: "rgba(255,107,158,0.16)", shadow: "rgba(255,107,158,0.45)" },
+    { key: "orange", label: "Corail",   accent: "#ff9f43", strong: "#e8822a", soft: "rgba(255,159,67,0.14)",  glow: "rgba(255,159,67,0.35)", wash: "rgba(255,159,67,0.16)",  shadow: "rgba(255,159,67,0.45)" },
+    { key: "gold",   label: "Or",       accent: "#f7d154", strong: "#dbb433", soft: "rgba(247,209,84,0.14)",  glow: "rgba(247,209,84,0.35)", wash: "rgba(247,209,84,0.16)",  shadow: "rgba(247,209,84,0.45)" }
+  ];
+
+  function loadTheme(){
+    try{
+      var k = localStorage.getItem(LS_THEME);
+      return THEMES.some(function(t){ return t.key === k; }) ? k : "green";
+    }catch(e){ return "green"; }
+  }
+
+  function applyTheme(key){
+    var t = THEMES.filter(function(x){ return x.key === key; })[0] || THEMES[0];
+    var root = document.documentElement.style;
+    root.setProperty("--accent", t.accent);
+    root.setProperty("--accent-strong", t.strong);
+    root.setProperty("--accent-soft", t.soft);
+    root.setProperty("--card-border-hover", t.glow);
+    root.setProperty("--accent-wash", t.wash);
+    root.setProperty("--accent-shadow", t.shadow);
+  }
+
+  function renderThemeGrid(){
+    var grid = document.getElementById("themeGrid");
+    if (!grid) return;
+    var current = loadTheme();
+    grid.innerHTML = "";
+    THEMES.forEach(function(t){
+      var wrap = document.createElement("div");
+      wrap.className = "theme-opt-wrap";
+      var sw = document.createElement("div");
+      sw.className = "theme-opt" + (t.key === current ? " active" : "");
+      sw.style.background = "linear-gradient(160deg," + t.accent + "," + t.strong + ")";
+      sw.setAttribute("data-key", t.key);
+      sw.innerHTML = (t.key === current) ? "✓" : "";
+      sw.addEventListener("click", function(){
+        try{ localStorage.setItem(LS_THEME, t.key); }catch(e){}
+        applyTheme(t.key);
+        renderThemeGrid();
+      });
+      wrap.appendChild(sw);
+      var lbl = document.createElement("span");
+      lbl.className = "theme-opt-label";
+      lbl.textContent = t.label;
+      wrap.appendChild(lbl);
+      grid.appendChild(wrap);
+    });
+  }
+
+  function openThemeSheet(){
+    if (!isProNow()) return; // garde-fou : accessible uniquement une fois Pro débloqué
+    renderThemeGrid();
+    var themeOv = document.getElementById("themeOverlay");
+    if (themeOv) themeOv.classList.add("open");
+  }
+
+  (function(){
+    var themeOv = document.getElementById("themeOverlay");
+    if (!themeOv) return;
+    var close = document.getElementById("themeCloseBtn");
+    if (close) close.addEventListener("click", function(){ themeOv.classList.remove("open"); });
+    themeOv.addEventListener("click", function(e){ if (e.target === themeOv) themeOv.classList.remove("open"); });
+  })();
 
   /* ========================================================
      UTILS
@@ -1216,7 +1332,7 @@
   document.getElementById("btnAddTop").addEventListener("click", openAddSheet);
 
   /* ========================================================
-     PRO (4,99€ à vie) : sans pub + export CSV illimité
+     PRO (4,99€ à vie) : sans pub + export CSV illimité + thèmes
      Layout pub safe : utilitaire = bannière seule, JAMAIS d'interstitiel.
   ======================================================== */
   function updateProUI(){
@@ -1225,8 +1341,15 @@
     var proBtn = document.getElementById("proBtn");
     var csvBtn = document.getElementById("btnExportCsv");
     if (bannerEl) bannerEl.style.display = isPro ? "none" : "";
-    if (proBtn) proBtn.style.display = isPro ? "none" : "";
     if (csvBtn) csvBtn.textContent = isPro ? "📤 Exporter en CSV" : "📤 Exporter en CSV (Pro)";
+    // Le bouton d'action change de rôle une fois Pro débloqué : upsell -> accès aux thèmes.
+    if (proBtn){
+      proBtn.textContent = isPro ? "🎨 Thème" : "✨ Pro";
+      proBtn.setAttribute("data-umami-event", isPro ? "theme_open_click" : "pro_click");
+    }
+    // Reflète l'état Pro sur la bannière native (à vide si jamais branchée sans init AdMob).
+    if (isNative && AdMob){ if (isPro) removeAdmob(); else showAdmobBanner(); }
+    applyTheme(isPro ? loadTheme() : "green");
   }
 
   // Placeholder pub récompensée (web, sobre) : accorde la récompense directement avec une
@@ -1239,11 +1362,13 @@
   (function(){
     var ov = document.getElementById("proOverlay");
     var proBtn = document.getElementById("proBtn");
-    if (proBtn) proBtn.addEventListener("click", function(){ if(ov) ov.classList.add("open"); });
+    if (proBtn) proBtn.addEventListener("click", function(){
+      if (isProNow()) openThemeSheet(); else if (ov) ov.classList.add("open");
+    });
     var pc = document.getElementById("proClose"); if(pc) pc.addEventListener("click", function(){ if(ov) ov.classList.remove("open"); });
     var pb = document.getElementById("proBuy");
     if (pb) pb.addEventListener("click", function(){
-      alert("Le paiement Mes Abos Pro (4,99 €, à vie) sera bientôt disponible via le Google Play Store.\nReviens ici dès que l'app est publiée pour supprimer la pub et débloquer l'export CSV illimité.");
+      alert("Le paiement Mes Abos Pro (4,99 €, à vie) sera bientôt disponible via le Google Play Store.\nReviens ici dès que l'app est publiée pour supprimer la pub, débloquer l'export CSV illimité et les 6 thèmes de couleur.");
     });
     var pr = document.getElementById("proRewarded");
     if (pr) pr.addEventListener("click", function(){
@@ -1257,6 +1382,16 @@
      PARTAGE — SHARE CARD CANVAS 1080x1920
   ======================================================== */
   function makeShareCanvas(monthlyStr, annualStr){
+    // Couleur vive : reflète le thème choisi (Pro) plutôt qu'un vert figé,
+    // pour que la carte partagée corresponde à l'appli affichée à l'écran.
+    var themeAccent = "#2ed59e", themeGlow = "rgba(46,213,158,0.35)";
+    try{
+      var cs = getComputedStyle(document.documentElement);
+      themeAccent = (cs.getPropertyValue("--accent") || themeAccent).trim() || themeAccent;
+      themeGlow = (cs.getPropertyValue("--card-border-hover") || themeGlow).trim() || themeGlow;
+    }catch(e){}
+    var themeGlowFade = themeGlow.replace(/[\d.]+\)$/, "0)"); // même teinte, alpha 0 (fondu)
+
     var canvas = document.createElement("canvas");
     canvas.width = 1080;
     canvas.height = 1920;
@@ -1269,12 +1404,12 @@
     ctx.fillRect(0, 0, 1080, 1920);
 
     var glow = ctx.createRadialGradient(540, 460, 40, 540, 460, 520);
-    glow.addColorStop(0, "rgba(46,213,158,0.35)");
-    glow.addColorStop(1, "rgba(46,213,158,0)");
+    glow.addColorStop(0, themeGlow);
+    glow.addColorStop(1, themeGlowFade);
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    ctx.strokeStyle = "#2ed59e";
+    ctx.strokeStyle = themeAccent;
     ctx.lineWidth = 24;
     ctx.beginPath();
     ctx.arc(540, 400, 145, 55 * Math.PI / 180, 340 * Math.PI / 180);
@@ -1286,7 +1421,7 @@
     ctx.textBaseline = "middle";
     ctx.fillText("€", 540, 400);
 
-    ctx.fillStyle = "#2ed59e";
+    ctx.fillStyle = themeAccent;
     ctx.font = "bold 38px 'Segoe UI', system-ui, sans-serif";
     ctx.fillText("M E S   A B O S", 540, 630);
 
@@ -1294,7 +1429,7 @@
     ctx.font = "56px 'Segoe UI', system-ui, sans-serif";
     ctx.fillText("Je dépense", 540, 730);
 
-    ctx.fillStyle = "#2ed59e";
+    ctx.fillStyle = themeAccent;
     ctx.font = "bold 118px 'Segoe UI', system-ui, sans-serif";
     ctx.fillText(monthlyStr + " €", 540, 865, 940);
 
@@ -1317,7 +1452,7 @@
     ctx.font = "bold 84px 'Segoe UI', system-ui, sans-serif";
     ctx.fillText(annualStr + " € / an", 540, 1230, 940);
 
-    ctx.fillStyle = "#2ed59e";
+    ctx.fillStyle = themeAccent;
     ctx.font = "italic 46px 'Segoe UI', system-ui, sans-serif";
     ctx.fillText("Et toi, combien ça te coûte ?", 540, 1400, 940);
 

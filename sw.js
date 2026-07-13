@@ -1,5 +1,5 @@
 // Service worker "Mes Abos" — cache offline minimal
-const CACHE_NAME = "mesabos-cache-v4";
+const CACHE_NAME = "mesabos-cache-v5";
 const ASSETS = [
   "./",
   "./index.html",
