@@ -1352,10 +1352,15 @@
     applyTheme(isPro ? loadTheme() : "green");
   }
 
-  // Placeholder pub récompensée (web, sobre) : accorde la récompense directement avec une
-  // mention honnête. À brancher sur @capacitor-community/admob (rewarded) côté app Android.
+  // Pub RÉCOMPENSÉE (rewarded) — le format le plus rentable (§12.34). Natif AdMob via
+  // @capacitor-community/admob si dispo ; sinon fallback web (accorde la récompense, mention honnête).
   function showRewardedAd(onReward){
-    alert("🎬 Pub vidéo bientôt disponible via l'app Android.\nEn attendant, ton export est débloqué gratuitement cette fois !");
+    if (AdMob && rewardReady){
+      pendingReward = onReward; rewardGranted = false;
+      AdMob.showRewardVideoAd().catch(function(){ pendingReward = null; onReward(); });
+      return;
+    }
+    alert("🎬 La pub vidéo récompensée arrive avec l'app Android.\nEn attendant, ton export est débloqué cette fois-ci.");
     onReward();
   }
 
@@ -1617,10 +1622,21 @@
   function isProNow(){ return !!localStorage.getItem("mesabos_premium"); }
 
   // Utilitaire = bannière seule, JAMAIS d'interstitiel (voir section PRO plus haut).
+  // Pub RÉCOMPENSÉE (rewarded) — débloque l'export CSV contre une pub. Format le + rentable (§12.34).
+  var AD_REWARD = 'ca-app-pub-3940256099942544/5224354917'; // TEST Google — remplacer par l'ID prod à la publication
+  var rewardReady = false, rewardGranted = false, pendingReward = null;
+  function admobPrepReward(){ if(!AdMob) return; try{ AdMob.prepareRewardVideoAd({ adId:AD_REWARD, isTesting:true }).then(function(){ rewardReady=true; }).catch(function(){ rewardReady=false; }); }catch(e){} }
+  function onRewardClosed(){ var cb=pendingReward; pendingReward=null; rewardReady=false; admobPrepReward(); if(rewardGranted && cb){ rewardGranted=false; cb(); } }
+  function onRewardFail(){ var cb=pendingReward; pendingReward=null; rewardReady=false; admobPrepReward(); if(cb) cb(); }
+
   function admobInit(){
     if (!AdMob || isProNow()) return;
     AdMob.initialize({ initializeForTesting: true }).then(function(){
       showAdmobBanner();
+      try{ AdMob.addListener('onRewardedVideoAdReward', function(){ rewardGranted=true; }); }catch(e){}
+      try{ AdMob.addListener('onRewardedVideoAdDismissed', onRewardClosed); }catch(e){}
+      try{ AdMob.addListener('onRewardedVideoAdFailedToShow', onRewardFail); }catch(e){}
+      admobPrepReward();
     }).catch(function(){});
   }
   function showAdmobBanner(){ if(!AdMob || isProNow()) return; AdMob.showBanner({ adId:'ca-app-pub-3940256099942544/6300978111', adSize:'ADAPTIVE_BANNER', position:'BOTTOM_CENTER', margin:0, isTesting:true }).catch(function(){}); }
